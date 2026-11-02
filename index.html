@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Futebol</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Futebol">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f6b4a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚽%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#eef1f3;--card:#fff;--ink:#14212b;--mute:#5d6b76;--line:#d9e0e5;--acc:#0f6b4a;--live:#d6342c;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1519;--card:#16212a;--ink:#e8eef2;--mute:#8fa0ab;--line:#26343e;--acc:#3dbd8d;--live:#ff6b5e}}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
+body{padding:env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 14px 8px;margin-top:calc(-1*env(safe-area-inset-top));border-bottom:1px solid var(--line)}
+h1{font-size:20px;font-weight:800;letter-spacing:-.01em;display:flex;justify-content:space-between;align-items:center}
+h1 small{font-size:12px;font-weight:500;color:var(--mute)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:99px;font:600 13px system-ui}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+main{padding:12px 14px;max-width:640px;margin:auto}
+.day{font-weight:700;font-size:14px;color:var(--mute);margin:16px 0 6px}
+.lg{font-weight:700;font-size:13px;color:var(--acc);margin:12px 0 4px}
+.m{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;padding:2px 0}
+.t{display:flex;align-items:center;gap:8px;min-width:0}
+.t img{width:22px;height:22px;object-fit:contain;flex:none}
+.t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{font-weight:800;font-variant-numeric:tabular-nums}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:13px;color:var(--mute)}
+.meta.live b{color:var(--live)}
+.meta a{color:var(--acc);font-weight:600;text-decoration:none}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{padding:7px 6px;text-align:center;font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line)}
+td.n{text-align:left;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.p{font-weight:800}
+tr+tr td{border-top:1px solid var(--line)}
+.news{display:flex;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px;text-decoration:none;color:inherit}
+.news img{width:96px;object-fit:cover;flex:none;background:var(--line)}
+.news div{padding:10px 10px 10px 12px}
+.news b{display:block;font-size:15px;line-height:1.3}
+.news small{color:var(--mute);font-size:12px}
+.msg{color:var(--mute);text-align:center;padding:28px 10px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;color:var(--mute);font:600 13px system-ui;padding:12px 0}
+nav button.on{color:var(--acc);box-shadow:inset 0 2px var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Futebol <small id="upd"></small></h1>
+  <div class="chips" id="chips"></div>
+</header>
+<main id="main"><p class="msg">A carregar…</p></main>
+<nav>
+  <button data-t="jogos" class="on">Jogos</button>
+  <button data-t="tabelas">Classificações</button>
+  <button data-t="noticias">Notícias</button>
+</nav>
+<script>
+// ===== Configuração: edita aqui as ligas e as pesquisas de notícias =====
+const LEAGUES=[
+ {id:'por.1',name:'Liga Portugal',q:'Benfica OR Sporting OR FC Porto OR Braga'},
+ {id:'eng.1',name:'Premier League',q:'Premier League'},
+ {id:'eng.2',name:'Championship',q:'EFL Championship'},
+ {id:'esp.1',name:'La Liga',q:'La Liga'},
+ {id:'ita.1',name:'Serie A',q:'Serie A'},
+ {id:'ger.1',name:'Bundesliga',q:'Bundesliga'},
+ {id:'fra.1',name:'Ligue 1',q:'Ligue 1'}
+];
+// Jornais portugueses usados nas notícias (pesquisa Google News limitada a estes sites)
+const SITES=['abola.pt','record.pt','ojogo.pt','rtp.pt','maisfutebol.iol.pt'];
+const DIAS=4;
+// ========================================================================
+const ESPN='https://site.api.espn.com/apis/';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let tab='jogos',lg='all',cache={};
+const hm=d=>d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+const dayLbl=d=>d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
+const ymd=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+const j=async u=>{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json()};
+
+function chips(){
+  const all=[{id:'all',name:'Todas'},...LEAGUES];
+  $('#chips').innerHTML=all.map(l=>`<button class="chip ${l.id===lg?'on':''}" data-l="${l.id}">${l.name}</button>`).join('');
+}
+$('#chips').onclick=e=>{const b=e.target.closest('[data-l]');if(!b)return;lg=b.dataset.l;chips();render()};
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));render()};
+
+const sel=()=>lg==='all'?LEAGUES:LEAGUES.filter(l=>l.id===lg);
+
+async function jogos(){
+  const a=new Date(),b=new Date();b.setDate(b.getDate()+DIAS-1);
+  const res=await Promise.all(sel().map(async l=>{
+    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${ymd(a)}-${ymd(b)}&limit=100`);
+      return (d.events||[]).map(e=>({l:l.name,e}))}catch{return []}}));
+  const ev=res.flat().sort((x,y)=>new Date(x.e.date)-new Date(y.e.date));
+  if(!ev.length)return '<p class="msg">Sem jogos nos próximos dias para esta seleção.</p>';
+  let out='',cur='',curL='';
+  for(const {l,e} of ev){
+    const d=new Date(e.date),k=d.toDateString();
+    if(k!==cur){cur=k;curL='';out+=`<div class="day">${esc(dayLbl(d))}</div>`}
+    if(l!==curL){curL=l;out+=`<div class="lg">${esc(l)}</div>`}
+    const c=e.competitions[0].competitors,h=c.find(x=>x.homeAway==='home'),w=c.find(x=>x.homeAway==='away');
+    const st=e.status.type,pre=st.state==='pre',live=st.state==='in';
+    const team=x=>`<div class="row"><div class="t"><img src="${esc(x.team.logo||'')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(x.team.displayName)}</span></div><div class="sc">${pre?'':esc(x.score)}</div></div>`;
+    const q=encodeURIComponent(`onde ver ${h.team.displayName} ${w.team.displayName} ${d.toLocaleDateString('pt-PT')}`);
+    out+=`<div class="m">${team(h)}${team(w)}<div class="meta ${live?'live':''}"><span>${pre?hm(d):live?'<b>● '+esc(st.shortDetail)+'</b>':esc(st.shortDetail)}</span>${st.state==='post'?'':`<a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Onde ver</a>`}</div></div>`;
+  }
+  return out;
+}
+
+async function tabelas(){
+  const res=await Promise.all(sel().map(async l=>{
+    try{const d=await j(`${ESPN}v2/sports/soccer/${l.id}/standings`);
+      const en=(d.children?.[0]?.standings?.entries)||[];
+      const g=(x,n)=>x.stats.find(s=>s.name===n)?.value??'';
+      const rows=en.map(x=>({n:x.team.displayName,r:g(x,'rank'),j:g(x,'gamesPlayed'),v:g(x,'wins'),e:g(x,'ties'),d:g(x,'losses'),sg:g(x,'pointDifferential'),p:g(x,'points')})).sort((a,b)=>a.r-b.r);
+      return `<div class="lg">${esc(l.name)}</div><table><tr><th>#</th><th style="text-align:left">Equipa</th><th>J</th><th>V</th><th>E</th><th>D</th><th>DG</th><th>Pts</th></tr>${rows.map(r=>`<tr><td>${r.r}</td><td class="n">${esc(r.n)}</td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.sg}</td><td class="p">${r.p}</td></tr>`).join('')}</table>`}
+    catch{return `<div class="lg">${esc(l.name)}</div><p class="msg">Classificação indisponível.</p>`}}));
+  return res.join('');
+}
+
+async function noticias(){
+  const items=[];
+  await Promise.all(sel().map(async l=>{
+    // 1) Jornais portugueses via Google News (título + link; sem imagem)
+    try{
+      const q=`(${l.q}) (${SITES.map(s=>'site:'+s).join(' OR ')}) when:2d`;
+      const rss=`https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=pt-PT&gl=PT&ceid=PT:pt-150`;
+      const d=await j('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(rss));
+      (d.items||[]).slice(0,6).forEach(i=>items.push({t:i.title,u:i.link,img:i.thumbnail||(i.enclosure&&i.enclosure.link)||'',s:l.name+' · '+(i.author||'Jornal'),d:new Date(i.pubDate.replace(' ','T')+'Z')}));
+    }catch{}
+    // 2) ESPN (com imagem)
+    try{
+      const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/news?limit=6`);
+      (d.articles||[]).forEach(a=>items.push({t:a.headline,u:a.links?.web?.href,img:a.images?.[0]?.url||'',s:l.name+' · ESPN',d:new Date(a.published)}));
+    }catch{}
+  }));
+  const seen=new Set(),list=items.filter(i=>i.u&&i.t&&!seen.has(i.u)&&seen.add(i.u)).sort((a,b)=>b.d-a.d).slice(0,40);
+  if(!list.length)return '<p class="msg">Não foi possível carregar notícias agora. Tenta atualizar mais tarde.</p>';
+  return list.map(i=>`<a class="news" href="${esc(i.u)}" target="_blank" rel="noopener">${i.img?`<img src="${esc(i.img)}" alt="" loading="lazy" onerror="this.remove()">`:''}<div><b>${esc(i.t)}</b><small>${esc(i.s)}</small></div></a>`).join('');
+}
+
+const fn={jogos,tabelas,noticias};
+let tok=0;
+async function render(force){
+  const my=++tok,key=tab+lg;
+  if(cache[key]&&!force)$('#main').innerHTML=cache[key];else $('#main').innerHTML='<p class="msg">A carregar…</p>';
+  try{const h=await fn[tab]();cache[key]=h;if(my===tok){$('#main').innerHTML=h;$('#upd').textContent='Atualizado '+hm(new Date())}}
+  catch{if(my===tok)$('#main').innerHTML='<p class="msg">Sem ligação. Verifica a internet e volta a abrir.</p>'}
+}
+chips();render();
+setInterval(()=>{if(!document.hidden&&tab==='jogos')render(true)},60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){cache={};render(true)}});
+</script>
+</body>
+</html>
