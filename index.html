@@ -142,6 +142,8 @@ tr[data-club]{cursor:pointer}
 .fm i{font-style:normal;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
 .fm i.v{background:#1a9b5b}.fm i.d{background:#d6342c}.fm i.e{background:#e0a800;color:#222}
 .ph2{width:40px;height:40px;border-radius:50%;object-fit:cover;background:var(--line);flex:none}
+.av{position:relative;width:40px;height:40px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--mute);flex:none;overflow:hidden}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #toast{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:50;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;font-weight:600;font-size:14px;display:none;max-width:616px;margin:auto}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;color:var(--mute);font:600 11px system-ui;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -188,7 +190,7 @@ const LEAGUES=[
 const SITES=['abola.pt','record.pt','ojogo.pt','rtp.pt','maisfutebol.iol.pt'];
 // Canais em Portugal por competição (edita aqui se os direitos mudarem)
 const CANAIS_PT={'por.1':['Sport TV'],'eng.1':['DAZN'],'eng.2':['Sport TV'],'esp.1':['DAZN'],'ita.1':['Sport TV'],'ger.1':['DAZN'],'fra.1':['Sport TV'],'uefa.champions':['Sport TV','DAZN'],'uefa.europa':['Sport TV','DAZN'],'uefa.europa.conf':['Sport TV','DAZN'],'por.taca.portugal':['Sport TV','RTP'],'por.league_cup':['Sport TV']};
-const CAPAS=[['A Bola','a-bola'],['Record','record'],['O Jogo','o-jogo'],['Marca','marca'],['AS','as'],['Mundo Deportivo','mundo-deportivo']];
+const CAPAS=[['A Bola','jornal_a_bola'],['Record','jornal_record'],['O Jogo','jornal_o_jogo'],['Marca','jornal_marca'],['AS','jornal_as'],['Mundo Deportivo','jornal_mundo_deportivo'],['Sport','jornal_sport'],['Gazzetta dello Sport','la_gazzeta_dello_sport'],['Corriere dello Sport','corriere_dello_sport'],['Tuttosport','jornal_tuttosport'],['L’Équipe','jornal_l_equipe']];
 const LAY={
  p:{n:'Principal',c:'center'},
  1:{n:'LiveScore escuro',c:'row',mode:'escuro',acc:'amarelo'},
@@ -201,7 +203,7 @@ const ACC={verde:['#0f6b4a','#3dbd8d'],azul:['#1d5fd1','#6aa3ff'],laranja:['#d45
 const ESPN='https://site.api.espn.com/apis/',CORE='https://sports.core.api.espn.com/v2/sports/soccer/leagues/';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const DEF={lay:'p',mode:'auto',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false};
+const DEF={lay:'p',mode:'auto',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false,canal:{}};
 let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}catch{}
 const save=()=>{try{localStorage.setItem('fut',JSON.stringify(S))}catch{}};
 let tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
@@ -349,19 +351,12 @@ async function noticias(){
   if(!list.length)return head+'<p class="msg">Sem notícias desta competição nos últimos 15 dias.</p>';
   return head+list.map(i=>`<a class="news" href="${esc(i.u)}" target="_blank" rel="noopener">${i.img?`<img src="${esc(i.img)}" alt="" loading="lazy" onerror="this.remove()">`:`<span class="ph">${LGI(L)}</span>`}<div><b>${esc(i.t)}</b><small>${esc(i.s)} · ${i.d.toLocaleDateString('pt-PT',{day:'numeric',month:'short'})}</small></div></a>`).join('');
 }
-const PROX=[u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),u=>'https://corsproxy.io/?url='+encodeURIComponent(u)];
-async function capaUrl(slug){
-  const u=`https://www.vercapas.com/capa/${slug}.html`;
-  for(const p of PROX){try{const r=await fetch(p(u));if(!r.ok)continue;const h=await r.text(),m=h.match(/og:image["']\s+content=["']([^"']+)/i)||h.match(/twitter:image["']\s+content=["']([^"']+)/i);
-    if(m)return {thumb:m[1],full:m[1].replace('/thumbc/26/','/').replace(/\/thumb[a-z]*\/\d+\//,'/')}}catch{}}
-  return null;
-}
-async function capas(){
-  const res=await Promise.all(CAPAS.map(async([n,s])=>({n,c:CACHE['cp'+s]||(CACHE['cp'+s]=await capaUrl(s))})));
-  const ok=res.filter(x=>x.c);
-  if(!ok.length)return '<p class="msg">Não foi possível carregar as capas agora. <a class="lnk" href="https://www.vercapas.com/jornais/desportivos/" target="_blank" rel="noopener">Abrir no VerCapas</a></p>';
-  CAPAS.forEach(([n,s])=>{if(!CACHE['cp'+s])delete CACHE['cp'+s]});
-  return `<div class="caps">${ok.map(x=>`<div class="cw"><button data-cv="${esc(x.c.full)}"><img src="${esc(x.c.thumb)}" alt="" loading="lazy" onerror="this.src=this.dataset.f" data-f="${esc(x.c.full)}"><small>${esc(x.n)}</small></button></div>`).join('')}</div><p class="hint" style="margin-top:10px">Toca numa capa para ampliar. Fonte: VerCapas.</p>`;
+function capErr(im){const u=im.dataset.u.split('|'),i=+(im.dataset.i||0)+1;im.dataset.i=i;if(i<u.length)im.src=u[i];else{im.closest('.cw').style.display='none'}}
+function capas(){
+  const d=new Date(),y=new Date(Date.now()-864e5),z=n=>String(n).padStart(2,'0');
+  const u=(dt,sl,th)=>`https://capasjornais.pt/img/FrontPages/${dt.getFullYear()}${z(dt.getMonth()+1)}/${th?'thumb_':''}${sl}_${z(dt.getDate())}${z(dt.getMonth()+1)}${dt.getFullYear()}.jpg`;
+  return `<div class="caps">${CAPAS.map(([n,sl])=>{const th=[u(d,sl,1),u(y,sl,1)],fu=[u(d,sl,0),u(d,sl,1),u(y,sl,0),u(y,sl,1)];
+    return `<div class="cw"><button data-cv="${esc(fu.join('|'))}"><img src="${th[0]}" data-u="${th.join('|')}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="capErr(this)"><small>${esc(n)}</small></button></div>`}).join('')}</div><p class="hint" style="margin-top:10px">Toca numa capa para ampliar e volta a tocar para ampliar mais. Portugueses primeiro. Fonte: capasjornais.pt.</p>`;
 }
 /* ===== definições ===== */
 const SS={lay:'Layout',cor:'Cores',eq:'Equipas',al:'Alertas',vid:'Resumos em vídeo'};
@@ -392,18 +387,22 @@ const SUMC={};
 async function getSum(x,fresh){if(fresh)delete SUMC[x.e.id];return SUMC[x.e.id]||(SUMC[x.e.id]=await j(`${ESPN}site/v2/sports/soccer/${x.l.id}/summary?event=${x.e.id}`))}
 function chan(){return `<div class="box"><h4>Onde ver em Portugal</h4><div id="chn"><div class="st">A procurar…</div></div></div>`}
 const nz=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+async function canaisJson(){if(CACHE.cj)return CACHE.cj;try{CACHE.cj=await j('canais.json?t='+Date.now())}catch{CACHE.cj=[]}return CACHE.cj}
 async function chanFor(x){
-  const [h,w]=cp(x);let ex=[];
-  try{const d0=new Date(x.e.date),ds=`${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
-    const d=await j(`https://www.thesportsdb.com/api/v1/json/3/eventstv.php?d=${ds}&s=Soccer`);
+  const [h,w]=cp(x),d0=new Date(x.e.date),ds=`${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
+  if(S.canal&&S.canal[x.e.id])return [S.canal[x.e.id]];
+  const nn=nz(h.team.displayName+' '+w.team.displayName),ej=(await canaisJson()).filter(c=>c.d===ds&&nn.includes(nz(c.a))&&nn.includes(nz(c.b))).flatMap(c=>c.c);
+  if(ej.length)return ej;
+  try{const d=await j(`https://www.thesportsdb.com/api/v1/json/3/eventstv.php?d=${ds}&s=Soccer`);
     const a=nz(nm(h)).split(' ')[0],b=nz(nm(w)).split(' ')[0];
-    ex=[...new Set((d.tvevents||[]).filter(t=>/portugal/i.test(t.strCountry||'')&&nz(t.strEvent).includes(a)&&nz(t.strEvent).includes(b)).map(t=>t.strChannel).filter(Boolean))]}catch{}
-  return ex;
+    return [...new Set((d.tvevents||[]).filter(t=>/portugal/i.test(t.strCountry||'')&&nz(t.strEvent).includes(a)&&nz(t.strEvent).includes(b)).map(t=>t.strChannel).filter(Boolean))]}catch{}
+  return [];
 }
 async function loadChan(x){
   const gen=CANAIS_PT[x.l.id]||[],[h,w]=cp(x),q=encodeURIComponent(`${h.team.displayName} ${w.team.displayName} canal onde ver`),ex=await chanFor(x);
   if(!$('#chn'))return;
-  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato (ex.: Sport TV 1) ainda não publicado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
+  const usual=x.l.id==='uefa.champions'&&cp(x).some(y=>/sporting cp|benfica|porto|braga/i.test(y.team.displayName))?['Sport TV 5']:[];
+  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato ainda não registado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div class="vc"><input id="chin" placeholder="Ex.: Sport TV 5" style="flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px system-ui"><button data-setch="${x.e.id}">Guardar canal</button></div><div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
 }
 function openD(id){
   const x=evs().find(y=>y.e.id===id);if(!x)return;CUR=x;clearInterval(TMR);
@@ -485,10 +484,16 @@ async function openClub(id,l,n){
   const form=rr.slice(-5).map(r=>`<i class="${r}">${r==='v'?'V':r==='d'?'D':'E'}</i>`).join('');
   const z=n=>String(n).padStart(2,'0'),ds=d=>`${d.getUTCFullYear()}${z(d.getUTCMonth()+1)}${z(d.getUTCDate())}T${z(d.getUTCHours())}${z(d.getUTCMinutes())}00Z`;
   const ics=fut.length?'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Futebol//PT\r\n'+fut.map((f,i)=>`BEGIN:VEVENT\r\nUID:${id}-${i}-${+f.d}@futebol\r\nDTSTAMP:${ds(new Date())}\r\nDTSTART:${ds(f.d)}\r\nDTEND:${ds(new Date(+f.d+72e5))}\r\nSUMMARY:${f.t.replace(/[,;]/g,' ')}\r\nEND:VEVENT\r\n`).join('')+'END:VCALENDAR':'';
-  const pl=ro.status==='fulfilled'?(ro.value.athletes||[]).flatMap(a=>a.items||[a]).map(p=>`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line);font-size:14px"><span class="t"><img class="ph2" src="${esc(p.headshot?.href||'')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(p.jersey||'')} ${esc(p.displayName||p.fullName)}</span></span><span class="st">${esc(p.position?.abbreviation||'')}</span></div>`).join(''):'';
+  const pl=ro.status==='fulfilled'?(ro.value.athletes||[]).flatMap(a=>a.items||[a]).map(p=>`<div class="row" style="padding:7px 0;border-bottom:1px solid var(--line);font-size:14px"><span class="t"><span class="av" data-pn="${esc(nz(p.displayName||p.fullName))}">${esc(String(p.displayName||p.fullName||'').split(' ').map(w=>w[0]).slice(0,2).join(''))}${p.headshot?.href?`<img src="${esc(p.headshot.href)}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="this.remove()">`:''}</span><span>${esc(p.jersey||'')} ${esc(p.displayName||p.fullName)}</span></span><span class="st">${esc(p.position?.abbreviation||'')}</span></div>`).join(''):'';
   sheet(`${logo?`<img src="${esc(logo)}" alt="" style="width:30px;height:30px;margin-right:8px">`:''}<span style="overflow:hidden;text-overflow:ellipsis">${esc(n)}</span>`,
   `<div class="tabs"><button class="seg on" data-ct="j">Jogos da época</button><button class="seg" data-ct="p">Plantel</button></div>
   <div class="cpn" data-p="j">${form?`<div class="st">Últimos jogos</div><div class="fm">${form}</div>`:''}${jg}${ics?`<p style="margin-top:12px"><a class="lnk" download="jogos.ics" href="data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}">Adicionar jogos futuros ao calendário</a></p>`:''}</div><div class="cpn" data-p="p" style="display:none">${pl||'<p class="msg">Plantel indisponível.</p>'}</div>`);
+  faces(n);
+}
+async function faces(club){
+  try{const d=await j(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?t=${encodeURIComponent(club)}`),ps=(d.player||[]).map(p=>({n:nz(p.strPlayer),i:p.strCutout||p.strThumb||p.strRender})).filter(p=>p.i);
+    document.querySelectorAll('.av').forEach(a=>{if(a.querySelector('img'))return;const n=a.dataset.pn,l=n.split(' ').pop(),m=ps.find(p=>p.n===n)||ps.find(p=>p.n.endsWith(' '+l)&&p.n[0]===n[0]);
+      if(m){const im=document.createElement('img');im.src=m.i+'/small';im.alt='';im.referrerPolicy='no-referrer';im.onerror=()=>{im.src=m.i;im.onerror=()=>im.remove()};a.appendChild(im)}})}catch{}
 }
 /* ===== alertas ===== */
 let LASTSC={},ALD={};try{ALD=JSON.parse(localStorage.getItem('fut_al')||'{}')}catch{}
@@ -524,11 +529,12 @@ document.addEventListener('click',async e=>{
     if(S.notif){S.notif=false}else{try{if('Notification' in window&&Notification.permission!=='granted')await Notification.requestPermission()}catch{}S.notif=true;toast('Alertas ativos enquanto a app estiver aberta')}
     save();render();return}
   if(t.closest('#rs')){S={...DEF};save();theme();render();return}
-  if(b=t.closest('[data-cv]')){const i=$('#lbi');i.classList.remove('z');i.src=b.dataset.cv;$('#lb').classList.add('on');return}
+  if(b=t.closest('[data-cv]')){const i=$('#lbi'),u=b.dataset.cv.split('|');i.classList.remove('z');i.dataset.u=b.dataset.cv;i.dataset.i=0;i.referrerPolicy='no-referrer';i.onerror=()=>{const k=+i.dataset.i+1;i.dataset.i=k;if(k<u.length)i.src=u[k]};i.src=u[0];$('#lb').classList.add('on');return}
   if(b=t.closest('[data-d]')){calD=+b.dataset.d;render();return}
   if(b=t.closest('[data-lg]')){liga=b.dataset.lg?L1(b.dataset.lg):null;lsub='j';render();scrollTo(0,0);return}
   if(b=t.closest('[data-club]')){const [id,l,n]=b.dataset.club.split('|');openClub(id,l,n);return}
   if(b=t.closest('[data-id]')){openD(b.dataset.id);return}
+  if(b=t.closest('[data-setch]')){const v=($('#chin')?.value||'').trim();if(v){S.canal=S.canal||{};S.canal[b.dataset.setch]=v;save();if(CUR)loadChan(CUR)}return}
   if(t.closest('#lu')){lineups();return}
   if(t.closest('#ev')){evstats();return}
   if(b=t.closest('[data-vid]')){$('#vf').src='https://www.youtube-nocookie.com/embed/'+b.dataset.vid;return}
@@ -544,7 +550,7 @@ async function render(){
   if(tab==='defs'){$('#main').innerHTML=defs();return}
   const sw=`<div class="segs"><button class="seg ${nsub=='c'?'on':''}" data-ns="c">Capas</button><button class="seg ${nsub=='n'?'on':''}" data-ns="n">Notícias</button></div>`;
   $('#main').innerHTML=sw+'<p class="msg">A carregar…</p>';
-  const h=await (nsub==='c'?capas:noticias)();
+  const h=await (nsub==='c'?capas():noticias());
   if(my===tok)$('#main').innerHTML=sw+h;
 }
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
