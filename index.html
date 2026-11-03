@@ -236,25 +236,39 @@ const dOff=n=>{const d=new Date();d.setDate(d.getDate()+n);return d};
 async function pullRange(a,b,ids){
   let f=0,t=0;const A=ymd(dOff(a)),B=ymd(dOff(b));
   await Promise.all((ids?LEAGUES.filter(l=>ids.includes(l.id)):LEAGUES).map(async l=>{t++;
-    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${A}-${B}`);(d.events||[]).forEach(e=>MAP.set(e.id,{l,e}))}catch{f++}}));
+    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${A}-${B}`);(d.events||[]).forEach(e=>{e._t=Date.now();MAP.set(e.id,{l,e})})}catch{f++}}));
   return f===t;
 }
 async function pullDays(offs,ids){
   let f=0,t=0;
   await Promise.all(LEAGUES.filter(l=>!ids||ids.includes(l.id)).flatMap(l=>offs.map(async n=>{t++;
-    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${ymd(dOff(n))}`);(d.events||[]).forEach(e=>MAP.set(e.id,{l,e}))}catch{f++}})));
+    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${ymd(dOff(n))}`);(d.events||[]).forEach(e=>{e._t=Date.now();MAP.set(e.id,{l,e})})}catch{f++}})));
   return f===t;
 }
 const evs=()=>[...MAP.values()].sort((a,b)=>new Date(a.e.date)-new Date(b.e.date));
 try{JSON.parse(localStorage.getItem('fut_ev')||'[]').forEach(([id,e])=>{const l=L1(id);if(l)MAP.set(e.id,{l,e})});if(MAP.size)loaded=true}catch{}
 const persist=()=>{try{const lim=Date.now()-8*864e5;localStorage.setItem('fut_ev',JSON.stringify([...MAP.values()].filter(x=>new Date(x.e.date)>lim).map(x=>[x.l.id,x.e])))}catch{}};
-let tick=0;
+let tick=0,STAT=false;
+async function loadStatic(){
+  let ok=0;
+  await Promise.all(LEAGUES.map(async l=>{try{const d=await j(`data/${l.id}.json?t=${Math.floor(Date.now()/6e5)}`);
+    (d.events||[]).forEach(e=>{const o=MAP.get(e.id);if(!o||!o.e._t||Date.now()-o.e._t>36e5)MAP.set(e.id,{l,e})});ok++}catch{}}));
+  if(ok)STAT=true;
+}
 async function load(first){
   const re=()=>{if(['inicio','cal'].includes(tab)||liga)render()};
-  badAll=await pullDays([0]);loaded=true;checkAlerts();re();
-  if(first||tick%10===0)await pullRange(1,6).then(re);
-  if(first)await pullRange(-7,-1).then(re);
-  if(first&&MAP.size<5){await pullDays([0,1,2,3],LEAGUES.slice(0,8).map(l=>l.id));re()}
+  if(first||tick%10===0){await loadStatic();if(MAP.size){loaded=true;re()}}
+  const td=new Date().toDateString(),all=evs();
+  const live=all.filter(x=>new Date(x.e.date).toDateString()===td||isLive(x));
+  const ids=STAT?[...new Set(live.map(x=>x.l.id))]:null;
+  const offs=all.some(x=>isLive(x)&&new Date(x.e.date).toDateString()!==td)?[-1,0]:[0];
+  if(!STAT||ids.length)badAll=await pullDays(offs,ids);
+  loaded=true;checkAlerts();re();
+  if(!STAT){
+    if(first||tick%10===0)await pullRange(1,6).then(re);
+    if(first)await pullRange(-7,-1).then(re);
+    if(first&&MAP.size<5){await pullDays([0,1,2,3],LEAGUES.slice(0,8).map(l=>l.id));re()}
+  }
   persist();tick++;
 }
 const cp=x=>{const c=x.e.competitions[0].competitors;return[c.find(y=>y.homeAway==='home')||c[0],c.find(y=>y.homeAway==='away')||c[1]]};
@@ -502,7 +516,7 @@ async function openClub(id,l,n){
   sheet(`${logo?`<img src="${esc(logo)}" alt="" style="width:30px;height:30px;margin-right:8px">`:''}<span style="overflow:hidden;text-overflow:ellipsis">${esc(n)}</span>`,
   `<div class="tabs"><button class="seg on" data-ct="j">Jogos da época</button><button class="seg" data-ct="p">Plantel</button></div>
   <div class="cpn" data-p="j">${form?`<div class="st">Últimos jogos</div><div class="fm">${form}</div>`:''}${jg}${ics?`<p style="margin-top:12px"><a class="lnk" download="jogos.ics" href="data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}">Adicionar jogos futuros ao calendário</a></p>`:''}</div><div class="cpn" data-p="p" style="display:none">${pl||'<p class="msg">Plantel indisponível.</p>'}</div>`);
-  faces(n);
+  faces(n,id);
 }
 async function afSquad(club){
   const ck='fut_af_'+nz(club);try{const c=JSON.parse(localStorage.getItem(ck)||'null');if(c&&Date.now()-c.t<6048e5)return c.p}catch{}
@@ -512,9 +526,14 @@ async function afSquad(club){
   const p=((await g('players/squads?team='+t.team.id)).response?.[0]?.players||[]).map(x=>({n:nz(x.name),i:x.photo}));
   try{localStorage.setItem(ck,JSON.stringify({t:Date.now(),p}))}catch{}return p;
 }
-async function faces(club){
+async function fotosDb(){return CACHE.fd||(CACHE.fd=await j('data/fotos.json?t='+Math.floor(Date.now()/36e5)).catch(()=>({})))}
+async function faces(club,id){
   await new Promise(r=>setTimeout(r,1500));
   let els=[...document.querySelectorAll('.av')].filter(a=>!a.querySelector('img'));
+  try{const db=(await fotosDb())[id];if(db){const sq=db.p.filter(p=>p.h).map(p=>({n:nz(p.n),i:p.h}));
+    els.forEach(a=>{const n=a.dataset.pn,l=n.split(' ').pop(),m=sq.find(p=>p.n===n)||sq.find(p=>p.n.split(' ').pop()===l&&p.n[0]===n[0]);
+      if(m&&!a.querySelector('img')){const im=document.createElement('img');im.src=m.i;im.alt='';im.referrerPolicy='no-referrer';im.onerror=()=>im.remove();a.appendChild(im)}});
+    els=els.filter(a=>!a.querySelector('img'))}}catch{}
   if(S.af){try{const sq=await afSquad(club);els.forEach(a=>{const n=a.dataset.pn,l=n.split(' ').pop(),m=sq.find(p=>p.n===n)||sq.find(p=>p.n.split(' ').pop()===l&&p.n[0]===n[0]);
       if(m&&!a.querySelector('img')){const im=document.createElement('img');im.src=m.i;im.alt='';im.onerror=()=>im.remove();a.appendChild(im)}})}catch(e){toast('API-Football: '+(e.message||'erro'))}
     els=els.filter(a=>!a.querySelector('img'))}

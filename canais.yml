@@ -3,6 +3,8 @@ on:
   schedule:
     - cron: "15 */4 * * *"
   workflow_dispatch:
+concurrency:
+  group: atualizar-dados
 permissions:
   contents: write
 jobs:
@@ -19,4 +21,4 @@ jobs:
           git config user.name "canais-bot"
           git config user.email "canais-bot@users.noreply.github.com"
           git add canais.json
-          git diff --cached --quiet || (git commit -m "Atualizar canais" && git push)
+          git diff --cached --quiet || (git commit -m "Atualizar canais" && git pull --rebase && git push)
