@@ -232,19 +232,30 @@ document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-t]');i
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));chips();render();scrollTo(0,0)};
 
 /* ===== dados ===== */
-async function pull(offs,ids){
-  const days=offs.map(i=>{const d=new Date();d.setDate(d.getDate()+i);return ymd(d)});let f=0,t=0;
-  await Promise.all((ids?LEAGUES.filter(l=>ids.includes(l.id)):LEAGUES).flatMap(l=>days.map(async dd=>{t++;
-    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${dd}`);(d.events||[]).forEach(e=>MAP.set(e.id,{l,e}))}catch{f++}})));
+const dOff=n=>{const d=new Date();d.setDate(d.getDate()+n);return d};
+async function pullRange(a,b,ids){
+  let f=0,t=0;const A=ymd(dOff(a)),B=ymd(dOff(b));
+  await Promise.all((ids?LEAGUES.filter(l=>ids.includes(l.id)):LEAGUES).map(async l=>{t++;
+    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${A}-${B}`);(d.events||[]).forEach(e=>MAP.set(e.id,{l,e}))}catch{f++}}));
+  return f===t;
+}
+async function pullDays(offs,ids){
+  let f=0,t=0;
+  await Promise.all(LEAGUES.filter(l=>!ids||ids.includes(l.id)).flatMap(l=>offs.map(async n=>{t++;
+    try{const d=await j(`${ESPN}site/v2/sports/soccer/${l.id}/scoreboard?dates=${ymd(dOff(n))}`);(d.events||[]).forEach(e=>MAP.set(e.id,{l,e}))}catch{f++}})));
   return f===t;
 }
 const evs=()=>[...MAP.values()].sort((a,b)=>new Date(a.e.date)-new Date(b.e.date));
+try{JSON.parse(localStorage.getItem('fut_ev')||'[]').forEach(([id,e])=>{const l=L1(id);if(l)MAP.set(e.id,{l,e})});if(MAP.size)loaded=true}catch{}
+const persist=()=>{try{const lim=Date.now()-8*864e5;localStorage.setItem('fut_ev',JSON.stringify([...MAP.values()].filter(x=>new Date(x.e.date)>lim).map(x=>[x.l.id,x.e])))}catch{}};
 let tick=0;
 async function load(first){
-  badAll=await pull([0]);loaded=true;checkAlerts();if(['inicio','cal'].includes(tab)||liga)render();
-  if(first||tick%10===0)pull([1,2,3,4,5,6]).then(()=>{if(['inicio','cal'].includes(tab)||liga)render()});
-  if(first)pull([-1,-2,-3,-4,-5,-6,-7]).then(()=>{if(['inicio','cal'].includes(tab)||liga)render()});
-  tick++;
+  const re=()=>{if(['inicio','cal'].includes(tab)||liga)render()};
+  badAll=await pullDays([0]);loaded=true;checkAlerts();re();
+  if(first||tick%10===0)await pullRange(1,6).then(re);
+  if(first)await pullRange(-7,-1).then(re);
+  if(first&&MAP.size<5){await pullDays([0,1,2,3],LEAGUES.slice(0,8).map(l=>l.id));re()}
+  persist();tick++;
 }
 const cp=x=>{const c=x.e.competitions[0].competitors;return[c.find(y=>y.homeAway==='home')||c[0],c.find(y=>y.homeAway==='away')||c[1]]};
 const state=x=>x.e.status.type.state,isLive=x=>state(x)==='in';
@@ -563,7 +574,7 @@ async function render(){
   const my=++tok;
   if(tab==='inicio'){
     if(liga){$('#main').innerHTML='<p class="msg">A carregar…</p>';const h=await ligaView();if(my===tok)$('#main').innerHTML=h;return}
-    $('#main').innerHTML=inicio();$('#upd').textContent=loaded?'Atualizado '+hm(new Date()):'';return}
+    $('#main').innerHTML=inicio();$('#upd').textContent=loaded?'Atualizado '+hm(new Date())+' · '+MAP.size+' jogos':'';return}
   if(tab==='cal'){$('#main').innerHTML=cal();return}
   if(tab==='defs'){$('#main').innerHTML=defs();return}
   const sw=`<div class="segs"><button class="seg ${nsub=='c'?'on':''}" data-ns="c">Capas</button><button class="seg ${nsub=='n'?'on':''}" data-ns="n">Notícias</button></div>`;
