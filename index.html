@@ -94,9 +94,9 @@ tr[data-club]{cursor:pointer}
 .caps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cw{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
 .cw button{border:0;padding:0;background:none;width:100%;color:var(--ink)}
-.cw img{width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top;border-radius:6px;background:var(--line);display:block}
+.cw img{width:100%;height:auto;min-height:160px;object-fit:contain;border-radius:6px;background:var(--line);display:block}
 .cw small{display:block;margin-top:6px;font-weight:600}
-#lb{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.94);display:none;overflow:auto}
+#lb{position:fixed;inset:0;z-index:40;background:#000;display:none;overflow:auto;padding:calc(72px + env(safe-area-inset-top)) 0 calc(24px + env(safe-area-inset-bottom))}
 #lb.on{display:block}
 #lb img{width:100%;display:block;margin:auto}
 #lb img.z{width:250%;max-width:none}
@@ -262,9 +262,9 @@ function card(x,style){
   const row=y=>`<div class="row"><div class="t">${im(y)}<span>${esc(y.team.displayName)}</span></div><div class="sc">${sc(y)}</div></div>`;
   return `<div class="m ${style==='board'?'board':''} ${fv}" data-id="${x.e.id}">${row(h)}${row(w)}<div style="margin-top:4px">${st}</div></div>`;
 }
-const grouped=(ev,style)=>{let out='',cur='',cl='';
+const grouped=(ev,style,nd)=>{let out='',cur='',cl='';
   for(const x of ev){const d=new Date(x.e.date),k=d.toDateString();
-    if(k!==cur){cur=k;cl='';out+=`<div class="day">${esc(dayLbl(d))}</div>`}
+    if(k!==cur){cur=k;cl='';if(!nd)out+=`<div class="day">${esc(dayLbl(d))}</div>`}
     if(x.l.id!==cl){cl=x.l.id;out+=`<div class="lg">${LGI(x.l)}${esc(x.l.name)}</div>`}
     out+=card(x,style)}return out};
 const timeline=(ev,style)=>{let out='',cur='';
@@ -336,7 +336,7 @@ function cal(){
   const strip=`<div class="strip" id="strip">${days.map((d,i)=>`<button class="dd ${i-7===calD?'on':''} ${i===7?'td':''}" data-d="${i-7}">${d.toLocaleDateString('pt-PT',{weekday:'short'}).replace('.','')}<b>${d.getDate()}</b></button>`).join('')}</div>`;
   const ev=evs().filter(x=>new Date(x.e.date).toDateString()===cur.toDateString()&&(lg==='all'||x.l.id===lg)).sort((a,b)=>(favM(b)-favM(a))||(new Date(a.e.date)-new Date(b.e.date)));
   setTimeout(()=>{const o=document.querySelector('#strip .on');o&&o.scrollIntoView({inline:'center',block:'nearest'})},0);
-  return strip+`<div class="day">${esc(dayLbl(cur))}</div>`+(ev.length?grouped(ev,sty()):'<p class="msg">Sem jogos neste dia.</p>');
+  return strip+`<div class="day">${esc(dayLbl(cur))}</div>`+(ev.length?grouped(ev,sty(),1):'<p class="msg">Sem jogos neste dia.</p>');
 }
 /* ===== notícias e capas ===== */
 async function noticias(){
@@ -402,7 +402,7 @@ async function loadChan(x){
   const gen=CANAIS_PT[x.l.id]||[],[h,w]=cp(x),q=encodeURIComponent(`${h.team.displayName} ${w.team.displayName} canal onde ver`),ex=await chanFor(x);
   if(!$('#chn'))return;
   const usual=x.l.id==='uefa.champions'&&cp(x).some(y=>/sporting cp|benfica|porto|braga/i.test(y.team.displayName))?['Sport TV 5']:[];
-  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato ainda não registado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div class="vc"><input id="chin" placeholder="Ex.: Sport TV 5" style="flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px system-ui"><button data-setch="${x.e.id}">Guardar canal</button></div><div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
+  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato ainda não confirmado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
 }
 function openD(id){
   const x=evs().find(y=>y.e.id===id);if(!x)return;CUR=x;clearInterval(TMR);
@@ -473,8 +473,10 @@ async function vid(x){
 }
 async function openClub(id,l,n){
   CUR=null;clearInterval(TMR);sheet(esc(n),'<p class="msg">A carregar…</p>');
-  const [sc,ro]=await Promise.allSettled([j(`${ESPN}site/v2/sports/soccer/${l}/teams/${id}/schedule`),j(`${ESPN}site/v2/sports/soccer/${l}/teams/${id}/roster`)]);
-  const ev=sc.status==='fulfilled'?(sc.value.events||[]).sort((a,b)=>new Date(a.date)-new Date(b.date)):[],logo=sc.status==='fulfilled'?sc.value.team?.logo:'';
+  const B=`${ESPN}site/v2/sports/soccer/${l}/teams/${id}/`;
+  const [s0,s1,s2,ro]=await Promise.allSettled([j(B+'schedule'),j(B+'schedule?fixture=true'),j(B+'schedule?fixture=false'),j(B+'roster')]);
+  const em=new Map();[s0,s1,s2].forEach(r=>{if(r.status==='fulfilled')(r.value.events||[]).forEach(e=>em.set(e.id,e))});
+  const ev=[...em.values()].sort((a,b)=>new Date(a.date)-new Date(b.date)),logo=[s0,s1,s2].map(r=>r.status==='fulfilled'?r.value.team?.logo:'').find(Boolean)||'';
   const g=y=>y?.score?.displayValue??y?.score??'',lg2=y=>y?.team?.logo||y?.team?.logos?.[0]?.href||'',rr=[],fut=[];
   const tl=y=>`<span class="t"><img src="${esc(lg2(y))}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(y?.team?.displayName)}</span></span>`;
   const jg=ev.map(e=>{const c=e.competitions?.[0],cs=c?.competitors||[],h=cs.find(y=>y.homeAway==='home')||cs[0],w=cs.find(y=>y.homeAway==='away')||cs[1],d=new Date(e.date);
@@ -491,9 +493,14 @@ async function openClub(id,l,n){
   faces(n);
 }
 async function faces(club){
-  try{const d=await j(`https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?t=${encodeURIComponent(club)}`),ps=(d.player||[]).map(p=>({n:nz(p.strPlayer),i:p.strCutout||p.strThumb||p.strRender})).filter(p=>p.i);
-    document.querySelectorAll('.av').forEach(a=>{if(a.querySelector('img'))return;const n=a.dataset.pn,l=n.split(' ').pop(),m=ps.find(p=>p.n===n)||ps.find(p=>p.n.endsWith(' '+l)&&p.n[0]===n[0]);
-      if(m){const im=document.createElement('img');im.src=m.i+'/small';im.alt='';im.referrerPolicy='no-referrer';im.onerror=()=>{im.src=m.i;im.onerror=()=>im.remove()};a.appendChild(im)}})}catch{}
+  await new Promise(r=>setTimeout(r,2500));
+  const els=[...document.querySelectorAll('.av')].filter(a=>!a.querySelector('img'));
+  const one=async a=>{
+    const n=a.dataset.pn,last=n.split(' ').filter(w=>w.length>2).pop()||n;
+    try{const d=await j(`https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(n+' futebolista')}&gsrlimit=4&prop=pageimages&piprop=thumbnail&pithumbsize=120&format=json&origin=*`);
+      const p=Object.values(d.query?.pages||{}).sort((x,y)=>x.index-y.index).find(p=>p.thumbnail&&nz(p.title).includes(last));
+      if(p&&!a.querySelector('img')){const im=document.createElement('img');im.src=p.thumbnail.source;im.alt='';im.onerror=()=>im.remove();a.appendChild(im)}}catch{}};
+  for(let i=0;i<els.length;i+=5)await Promise.all(els.slice(i,i+5).map(one));
 }
 /* ===== alertas ===== */
 let LASTSC={},ALD={};try{ALD=JSON.parse(localStorage.getItem('fut_al')||'{}')}catch{}
@@ -534,7 +541,6 @@ document.addEventListener('click',async e=>{
   if(b=t.closest('[data-lg]')){liga=b.dataset.lg?L1(b.dataset.lg):null;lsub='j';render();scrollTo(0,0);return}
   if(b=t.closest('[data-club]')){const [id,l,n]=b.dataset.club.split('|');openClub(id,l,n);return}
   if(b=t.closest('[data-id]')){openD(b.dataset.id);return}
-  if(b=t.closest('[data-setch]')){const v=($('#chin')?.value||'').trim();if(v){S.canal=S.canal||{};S.canal[b.dataset.setch]=v;save();if(CUR)loadChan(CUR)}return}
   if(t.closest('#lu')){lineups();return}
   if(t.closest('#ev')){evstats();return}
   if(b=t.closest('[data-vid]')){$('#vf').src='https://www.youtube-nocookie.com/embed/'+b.dataset.vid;return}
