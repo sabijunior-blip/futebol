@@ -410,7 +410,33 @@ let CUR=null,TMR=null;
 function sheet(title,html){$('#stt').innerHTML=title;$('#sc').innerHTML=html+'<button class="cl2" id="cl3">Fechar</button>';$('#sheet').classList.add('on');$('#sheet .p').scrollTop=0}
 function closeSheet(){$('#sheet').classList.remove('on');clearInterval(TMR);CUR=null}
 const SUMC={};
-async function getSum(x,fresh){if(fresh)delete SUMC[x.e.id];return SUMC[x.e.id]||(SUMC[x.e.id]=await j(`${ESPN}site/v2/sports/soccer/${x.l.id}/summary?event=${x.e.id}`))}
+function slimS(d){
+  return {k:(d.keyEvents||[]).map(k=>({t:k.type?.text,m:k.clock?.displayValue,v:k.clock?.value,tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),x:k.shortText||k.text})),
+    s:(d.boxscore?.teams||[]).map(t=>({id:t.team?.id,s:Object.fromEntries((t.statistics||[]).map(z=>[z.name,z.displayValue]))})),
+    r:(d.rosters||[]).map(r=>({ha:r.homeAway,tm:{id:r.team?.id,displayName:r.team?.displayName,color:r.team?.color},f:r.formation,
+      r:(r.roster||[]).map(p=>({st:p.starter,j:p.jersey,fp:p.formationPlace,n:p.athlete?.displayName,sn:p.athlete?.shortName}))}))};
+}
+function fromDb(o){
+  return {keyEvents:(o.k||[]).map(k=>({type:{text:k.t},clock:{displayValue:k.m,value:k.v},team:{id:k.tm},participants:(k.p||[]).map(n=>({athlete:{displayName:n}})),shortText:k.x})),
+    boxscore:{teams:(o.s||[]).map(t=>({team:{id:t.id},statistics:Object.entries(t.s||{}).map(([name,displayValue])=>({name,displayValue}))}))},
+    rosters:(o.r||[]).map(r=>({homeAway:r.ha,team:r.tm,formation:r.f,roster:(r.r||[]).map(p=>({starter:p.st,jersey:p.j,formationPlace:p.fp,athlete:{displayName:p.n,shortName:p.sn}}))}))};
+}
+const sKey=id=>'fut_s'+id;
+function sSave(id,o){
+  try{localStorage.setItem(sKey(id),JSON.stringify(o));let l=JSON.parse(localStorage.getItem('fut_si')||'[]').filter(k=>k!==id);l.push(id);while(l.length>150)localStorage.removeItem(sKey(l.shift()));localStorage.setItem('fut_si',JSON.stringify(l))}
+  catch{try{const l=JSON.parse(localStorage.getItem('fut_si')||'[]');l.slice(0,40).forEach(k=>localStorage.removeItem(sKey(k)));localStorage.setItem('fut_si',JSON.stringify(l.slice(40)))}catch{}}
+}
+async function getSum(x,fresh){
+  const id=x.e.id;if(!fresh&&SUMC[id])return SUMC[id];
+  const post=state(x)==='post';
+  if(post&&!fresh){
+    try{const o=await j(`data/jogos/${id}.json`);return SUMC[id]=fromDb(o)}catch{}
+    try{const o=JSON.parse(localStorage.getItem(sKey(id))||'null');if(o)return SUMC[id]=fromDb(o)}catch{}
+  }
+  const o=slimS(await j(`${ESPN}site/v2/sports/soccer/${x.l.id}/summary?event=${id}`));
+  if(post&&(o.k.length||o.r.length||o.s.length))sSave(id,o);
+  return SUMC[id]=fromDb(o);
+}
 function chan(){return `<div class="box"><h4>Onde ver em Portugal</h4><div id="chn"><div class="st">A procurar…</div></div></div>`}
 const nz=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 async function canaisJson(){if(CACHE.cj)return CACHE.cj;try{CACHE.cj=await j('canais.json?t='+Date.now())}catch{CACHE.cj=[]}return CACHE.cj}
@@ -443,14 +469,14 @@ function openD(id){
   if(!pre){tline(x);if(isLive(x))TMR=setInterval(()=>tline(x,true),45000)}
 }
 async function tline(x,fresh){
-  let ke=[];
-  try{const d=await getSum(x,fresh);ke=(d.keyEvents||[]).filter(k=>/goal|card|subst|penalty/i.test(k.type?.text||k.type?.type||'')&&!/kickoff|half|end/i.test(k.type?.text||'')).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),tx:k.shortText||k.text||''}))}catch{}
+  let ke=[],err='';
+  try{const d=await getSum(x,fresh);ke=(d.keyEvents||[]).filter(k=>/goal|card|subst|penalty/i.test(k.type?.text||k.type?.type||'')&&!/kickoff|half|end/i.test(k.type?.text||'')).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),tx:k.shortText||k.text||''}))}catch(e){err=String(e.message||e)}
   if(!ke.length)ke=(x.e.competitions[0].details||[]).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.athletesInvolved||[]).map(p=>p.displayName),tx:''}));
   const el=$('#tl');if(!el||CUR!==x)return;
   const [h]=cp(x),ic=t=>/yellow/i.test(t)?'🟨':/red/i.test(t)?'🟥':/subst/i.test(t)?'🔁':'⚽';
   ke.sort((a,b)=>a.v-b.v);
   el.innerHTML=ke.length?ke.map(k=>{const home=String(k.tm)===String(h.team.id),txt=`${ic(k.t)} ${esc(k.p.length?(/subst/i.test(k.t)&&k.p.length>1?k.p[0]+' ↔ '+k.p[1]:k.p[0]):k.tx)}`;
-    return `<div class="tle"><div>${home?txt:''}</div><b>${esc(k.m)}</b><div class="a">${home?'':txt}</div></div>`}).join(''):'<div class="st">Ainda sem eventos publicados.</div>';
+    return `<div class="tle"><div>${home?txt:''}</div><b>${esc(k.m)}</b><div class="a">${home?'':txt}</div></div>`}).join(''):'<div class="st">Ainda sem eventos publicados.'+(err?' (erro '+esc(err)+')':'')+'</div>';
 }
 function pitch(rs){
   let g=`<svg viewBox="0 0 100 150" style="width:100%;display:block"><rect width="100" height="150" fill="#1c6b45"/>${[0,1,2,3,4,5].map(i=>`<rect y="${i*25}" width="100" height="12.5" fill="#fff" opacity=".06"/>`).join('')}<g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width=".5"><rect x="3" y="3" width="94" height="144"/><line x1="3" y1="75" x2="97" y2="75"/><circle cx="50" cy="75" r="10"/><rect x="25" y="3" width="50" height="20"/><rect x="25" y="127" width="50" height="20"/><rect x="38" y="3" width="24" height="7"/><rect x="38" y="140" width="24" height="7"/></g>`;
@@ -593,7 +619,7 @@ async function render(){
   const my=++tok;
   if(tab==='inicio'){
     if(liga){$('#main').innerHTML='<p class="msg">A carregar…</p>';const h=await ligaView();if(my===tok)$('#main').innerHTML=h;return}
-    $('#main').innerHTML=inicio();$('#upd').textContent=loaded?'Atualizado '+hm(new Date())+' · '+MAP.size+' jogos':'';return}
+    $('#main').innerHTML=inicio();$('#upd').textContent=loaded?'Atualizado '+hm(new Date())+' · '+MAP.size+' jogos'+(STAT?'':' · sem base de dados'):'';return}
   if(tab==='cal'){$('#main').innerHTML=cal();return}
   if(tab==='defs'){$('#main').innerHTML=defs();return}
   const sw=`<div class="segs"><button class="seg ${nsub=='c'?'on':''}" data-ns="c">Capas</button><button class="seg ${nsub=='n'?'on':''}" data-ns="n">Notícias</button></div>`;

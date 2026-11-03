@@ -68,7 +68,7 @@ def main():
                 old = {e["id"]: e for e in json.load(open(path, encoding="utf-8")).get("events", [])}
             except Exception:
                 old = {}
-        full = (not old) or today.weekday() == 0
+        full = (not old) or (today.weekday() == 0 and datetime.datetime.utcnow().hour < 1)
         ranges = []
         if full:
             d = season[0]
