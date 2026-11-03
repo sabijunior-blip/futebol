@@ -4,7 +4,7 @@ e guarda-os em data/<liga>.json. Corre no GitHub Actions, por isso a app não pr
 pedir tudo ao telemóvel."""
 import json, os, sys, time, datetime, urllib.request
 
-LEAGUES = ["por.1","por.taca.portugal","por.league_cup","uefa.champions","uefa.europa","uefa.europa.conf",
+LEAGUES = ["por.1","por.2","por.taca.portugal","por.league_cup","uefa.champions","uefa.europa","uefa.europa.conf",
  "eng.1","eng.2","eng.fa","eng.league_cup","esp.1","esp.copa_del_rey","ita.1","ita.coppa_italia",
  "ger.1","ger.dfb_pokal","fra.1","fra.coupe_de_france"]
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/"

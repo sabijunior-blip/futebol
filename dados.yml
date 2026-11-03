@@ -20,7 +20,6 @@ jobs:
           APIFOOTBALL_KEY: ${{ secrets.APIFOOTBALL_KEY }}
         run: |
           python dados.py
-          python jogos.py
       - name: Gravar alterações
         run: |
           git config user.name "dados-bot"
