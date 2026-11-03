@@ -359,7 +359,7 @@ function capas(){
     return `<div class="cw"><button data-cv="${esc(fu.join('|'))}"><img src="${th[0]}" data-u="${th.join('|')}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="capErr(this)"><small>${esc(n)}</small></button></div>`}).join('')}</div><p class="hint" style="margin-top:10px">Toca numa capa para ampliar e volta a tocar para ampliar mais. Portugueses primeiro. Fonte: capasjornais.pt.</p>`;
 }
 /* ===== definições ===== */
-const SS={lay:'Layout',cor:'Cores',eq:'Equipas',al:'Alertas',vid:'Resumos em vídeo'};
+const SS={lay:'Layout',cor:'Cores',eq:'Equipas',al:'Alertas',vid:'Resumos em vídeo',fot:'Fotos dos jogadores'};
 function defs(){
   if(!ss)return `<div class="set">${Object.entries(SS).map(([k,v])=>`<button class="opt" data-ss="${k}">${v} ›</button>`).join('')}</div>`;
   const back=`<button class="back" data-ss="">← Definições</button><h3>${SS[ss]}</h3>`;
@@ -368,6 +368,7 @@ function defs(){
   if(ss==='cor')return `<div class="set">${back}<div class="sub">Modo</div><div class="segs">${o('mode','auto','Auto')}${o('mode','claro','Claro')}${o('mode','escuro','Escuro')}</div><div class="sub">Cor de destaque</div><div class="sw">${Object.entries(ACC).map(([k,v])=>`<button class="${S.acc===k?'on':''}" data-s="acc" data-v="${k}" aria-label="${k}" style="background:${v[0]}"></button>`).join('')}</div></div>`;
   if(ss==='eq')return `<div class="set">${back}${S.favs.map((f,i)=>`<div class="opt ${i?'':'on'}" style="display:flex;justify-content:space-between;align-items:center"><span>${esc(f.full||f.name)}${i?'':' · principal'}</span><span>${i?`<button class="back" data-mf="${i}">Principal</button> `:''}${S.favs.length>1?`<button class="back" data-rf="${i}">✕</button>`:''}</span></div>`).join('')}<div class="sub">Adicionar equipa</div><div class="chips" style="flex-wrap:wrap">${LEAGUES.map(l=>`<button class="chip ${addLg===l.id?'on':''}" data-al="${l.id}">${LGI(l)}${l.name}</button>`).join('')}</div><div id="tp">${addLg?'<p class="msg">A carregar…</p>':''}</div></div>`;
   if(ss==='al')return `<div class="set">${back}<button class="opt ${S.notif?'on':''}" data-notif="1">${S.notif?'Alertas ativos':'Ativar alertas'}</button><p>Avisa quando uma das tuas equipas marca, quando o jogo começa e 15 minutos antes, com o canal. Funciona enquanto a app estiver aberta. Para receber com a app fechada é preciso um serviço externo de notificações, que ainda não está ligado.</p></div>`;
+  if(ss==='fot')return `<div class="set">${back}<div class="sub">Chave da API-Football</div><input id="afk" value="${esc(S.af||'')}" placeholder="Cola aqui a chave" autocapitalize="off" autocorrect="off"><p>Com a chave, o plantel mostra as fotos da API-Football. Sem ela, a app tenta a Wikipédia, que só tem os jogadores mais conhecidos. Fica guardada só neste telemóvel.</p><p><b>Como obter (grátis):</b> 1) cria conta em dashboard.api-football.com; 2) confirma o email; 3) no painel, copia a tua chave (API Key); 4) cola-a aqui. O plano grátis dá 100 pedidos por dia, e a app guarda cada plantel 7 dias para gastar poucos (2 pedidos por clube).</p></div>`;
   return `<div class="set">${back}<div class="sub">Chave da YouTube Data API</div><input id="ytk" value="${esc(S.yt)}" placeholder="Cola aqui a chave" autocapitalize="off" autocorrect="off"><p>Com a chave, o resumo de cada jogo acabado aparece dentro da app (VSport, Sport TV, DAZN e outros). Fica guardada só neste telemóvel.</p><p><b>Como obter (grátis):</b> 1) vai a console.cloud.google.com e cria um projeto; 2) em APIs e serviços → Biblioteca, procura YouTube Data API v3 e ativa; 3) em Credenciais → Criar credenciais → Chave de API; 4) em Restrições da chave, escolhe Sites (referenciadores HTTP), junta https://UTILIZADOR.github.io/* e limita à YouTube Data API v3; 5) cola a chave aqui. A quota grátis dá cerca de 100 pesquisas por dia.</p></div>`;
 }
 async function teamsPick(){
@@ -388,21 +389,21 @@ async function getSum(x,fresh){if(fresh)delete SUMC[x.e.id];return SUMC[x.e.id]|
 function chan(){return `<div class="box"><h4>Onde ver em Portugal</h4><div id="chn"><div class="st">A procurar…</div></div></div>`}
 const nz=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 async function canaisJson(){if(CACHE.cj)return CACHE.cj;try{CACHE.cj=await j('canais.json?t='+Date.now())}catch{CACHE.cj=[]}return CACHE.cj}
+const tk=n=>nz(n).split(/[^a-z0-9]+/).filter(t=>t.length>2);
 async function chanFor(x){
   const [h,w]=cp(x),d0=new Date(x.e.date),ds=`${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
-  if(S.canal&&S.canal[x.e.id])return [S.canal[x.e.id]];
-  const nn=nz(h.team.displayName+' '+w.team.displayName),ej=(await canaisJson()).filter(c=>c.d===ds&&nn.includes(nz(c.a))&&nn.includes(nz(c.b))).flatMap(c=>c.c);
-  if(ej.length)return ej;
-  try{const d=await j(`https://www.thesportsdb.com/api/v1/json/3/eventstv.php?d=${ds}&s=Soccer`);
-    const a=nz(nm(h)).split(' ')[0],b=nz(nm(w)).split(' ')[0];
-    return [...new Set((d.tvevents||[]).filter(t=>/portugal/i.test(t.strCountry||'')&&nz(t.strEvent).includes(a)&&nz(t.strEvent).includes(b)).map(t=>t.strChannel).filter(Boolean))]}catch{}
-  return [];
+  const ta=tk(h.team.displayName),tb=tk(w.team.displayName);let best=null,bs=0;
+  for(const e of await canaisJson()){
+    if(e.d!==ds||/youth|fem|next-gen|u19|u23|futsal|sub-/.test(e.s||''))continue;
+    const st=new Set((e.s||'').split('-')),a=ta.filter(t=>st.has(t)).length,b=tb.filter(t=>st.has(t)).length;
+    if(a&&b&&a+b>bs){bs=a+b;best=e}}
+  return best?best.c:[];
 }
 async function loadChan(x){
   const gen=CANAIS_PT[x.l.id]||[],[h,w]=cp(x),q=encodeURIComponent(`${h.team.displayName} ${w.team.displayName} canal onde ver`),ex=await chanFor(x);
   if(!$('#chn'))return;
   const usual=x.l.id==='uefa.champions'&&cp(x).some(y=>/sporting cp|benfica|porto|braga/i.test(y.team.displayName))?['Sport TV 5']:[];
-  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato ainda não confirmado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
+  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal ainda não publicado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
 }
 function openD(id){
   const x=evs().find(y=>y.e.id===id);if(!x)return;CUR=x;clearInterval(TMR);
@@ -492,9 +493,20 @@ async function openClub(id,l,n){
   <div class="cpn" data-p="j">${form?`<div class="st">Últimos jogos</div><div class="fm">${form}</div>`:''}${jg}${ics?`<p style="margin-top:12px"><a class="lnk" download="jogos.ics" href="data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}">Adicionar jogos futuros ao calendário</a></p>`:''}</div><div class="cpn" data-p="p" style="display:none">${pl||'<p class="msg">Plantel indisponível.</p>'}</div>`);
   faces(n);
 }
+async function afSquad(club){
+  const ck='fut_af_'+nz(club);try{const c=JSON.parse(localStorage.getItem(ck)||'null');if(c&&Date.now()-c.t<6048e5)return c.p}catch{}
+  const H={headers:{'x-apisports-key':S.af}},B='https://v3.football.api-sports.io/',g=async u=>{const r=await (await fetch(B+u,H)).json();if(r.errors&&Object.keys(r.errors).length)throw new Error(Object.values(r.errors)[0]);return r};
+  const q=club.replace(/\b(FC|CF|SC|CP|AFC)\b/gi,'').trim().split(' ')[0],ts=(await g('teams?search='+encodeURIComponent(q))).response||[];
+  const t=ts.find(x=>nz(x.team.name)===nz(club))||ts.find(x=>nz(x.team.name).includes(nz(q)));if(!t)return [];
+  const p=((await g('players/squads?team='+t.team.id)).response?.[0]?.players||[]).map(x=>({n:nz(x.name),i:x.photo}));
+  try{localStorage.setItem(ck,JSON.stringify({t:Date.now(),p}))}catch{}return p;
+}
 async function faces(club){
-  await new Promise(r=>setTimeout(r,2500));
-  const els=[...document.querySelectorAll('.av')].filter(a=>!a.querySelector('img'));
+  await new Promise(r=>setTimeout(r,1500));
+  let els=[...document.querySelectorAll('.av')].filter(a=>!a.querySelector('img'));
+  if(S.af){try{const sq=await afSquad(club);els.forEach(a=>{const n=a.dataset.pn,l=n.split(' ').pop(),m=sq.find(p=>p.n===n)||sq.find(p=>p.n.split(' ').pop()===l&&p.n[0]===n[0]);
+      if(m&&!a.querySelector('img')){const im=document.createElement('img');im.src=m.i;im.alt='';im.onerror=()=>im.remove();a.appendChild(im)}})}catch(e){toast('API-Football: '+(e.message||'erro'))}
+    els=els.filter(a=>!a.querySelector('img'))}
   const one=async a=>{
     const n=a.dataset.pn,last=n.split(' ').filter(w=>w.length>2).pop()||n;
     try{const d=await j(`https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(n+' futebolista')}&gsrlimit=4&prop=pageimages&piprop=thumbnail&pithumbsize=120&format=json&origin=*`);
@@ -517,7 +529,7 @@ async function checkAlerts(){
   try{localStorage.setItem('fut_al',JSON.stringify(ALD))}catch{}
 }
 /* ===== eventos ===== */
-document.addEventListener('input',e=>{if(e.target.id==='ytk'){S.yt=e.target.value.trim();save()}});
+document.addEventListener('input',e=>{if(e.target.id==='ytk'){S.yt=e.target.value.trim();save()}if(e.target.id==='afk'){S.af=e.target.value.trim();save()}});
 document.addEventListener('click',async e=>{
   const t=e.target;let b;
   if(t.id==='sheet'||t.closest('#cl')||t.closest('#cl3')){closeSheet();return}

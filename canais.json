@@ -1,10 +1,122 @@
 [
  {
+  "s": "estrela-da-amadora-santa-clara-2026-11-03-liga-next-gen",
   "d": "2026-11-03",
-  "a": "shakhtar",
-  "b": "sporting",
+  "c": [
+   "Canal 11"
+  ]
+ },
+ {
+  "s": "shakhtar-donetsk-sporting-2026-11-03-uefa-youth-league",
+  "d": "2026-11-03",
+  "c": [
+   "Sporting TV"
+  ]
+ },
+ {
+  "s": "man-united-u19-roma-u19-2026-11-03-uefa-youth-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "academico-de-viseu-torreense-2026-11-03-liga-next-gen",
+  "d": "2026-11-03",
+  "c": [
+   "Canal 11"
+  ]
+ },
+ {
+  "s": "atl-madrid-bayern-munchen-2026-11-03-uefa-youth-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "shakhtar-donetsk-sporting-2026-11-03-liga-dos-campeoes",
+  "d": "2026-11-03",
   "c": [
    "Sport TV 5"
+  ]
+ },
+ {
+  "s": "galatasaray-stuttgart-2026-11-03-uefa-champions-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "torreense-benfica-2026-11-03-camp-nacional-fem",
+  "d": "2026-11-03",
+  "c": [
+   "Canal 11",
+   "BTV"
+  ]
+ },
+ {
+  "s": "manchester-united-roma-2026-11-03-uefa-champions-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "barcelona-aston-villa-2026-11-03-uefa-champions-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "villarreal-psg-2026-11-03-uefa-champions-league",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN 4"
+  ]
+ },
+ {
+  "s": "west-bromwich-southampton-2026-11-03-efl-championship",
+  "d": "2026-11-03",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "atletico-madrid-bayern-munique-2026-11-03-liga-dos-campeoes",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "bod-glimt-lille-2026-11-03-liga-dos-campeoes",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "feyenoord-inter-de-milao-2026-11-03-liga-dos-campeoes",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "lask-slovan-bratislava-2026-11-03-liga-dos-campeoes",
+  "d": "2026-11-03",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "sporting-valadares-gaia-2026-11-03-camp-nac-fem",
+  "d": "2026-11-03",
+  "c": [
+   "Sporting TV"
   ]
  }
 ]
