@@ -262,6 +262,12 @@ function slimSched(e){
   const st=c.status?.type||e.status?.type||{};
   return {id:e.id,date:e.date,status:{type:{state:st.state,shortDetail:st.shortDetail||st.detail||''}},competitions:[{competitors:cs,venue:c.venue,details:[]}]};
 }
+async function ensureDay(n){
+  const k='cd'+n;if(CACHE[k])return;CACHE[k]=1;
+  const d=dOff(n).toDateString();
+  if(evs().some(x=>new Date(x.e.date).toDateString()===d))return;
+  await pullDays([n]);if(tab==='cal')render();
+}
 async function loadFavs(){
   for(const f of S.favs){
     try{
@@ -296,7 +302,7 @@ async function load(first){
   const offs=all.some(x=>isLive(x)&&new Date(x.e.date).toDateString()!==td)?[-1,0]:[0];
   if(!STAT||ids.length)badAll=await pullDays(offs,ids);
   loaded=true;checkAlerts();re();
-  if(!STAT&&(first||tick%20===0))await pullRange(-3,6).then(re);
+  if(!STAT&&(first||tick%20===0)){const ids=[...new Set([...S.favs.map(f=>f.lg||'por.1'),'por.1','uefa.champions','uefa.europa'])];await pullDays([1,2,3,4,5,6,-1,-2,-3],ids);re()}
   persist();tick++;
 }
 const cp=x=>{const c=x.e.competitions[0].competitors;return[c.find(y=>y.homeAway==='home')||c[0],c.find(y=>y.homeAway==='away')||c[1]]};
@@ -359,7 +365,7 @@ function inicio(){
 const isCup=l=>/taca|cup|copa|coppa|pokal|coupe|\.fa$/.test(l.id);
 async function ligaView(){
   const l=liga;if(isCup(l))lsub='j';
-  if(lsub==='j'&&!CACHE['lw'+l.id]){CACHE['lw'+l.id]=1;await pullRange(-60,60,[l.id])}
+  if(lsub==='j'&&!CACHE['lw'+l.id]){CACHE['lw'+l.id]=1;await pullDays([...Array(36)].map((_,i)=>i-14),[l.id])}
   const hd=`<button class="back" data-lg="">← Início</button><div class="lg" style="font-size:16px">${LGI(l)}${esc(l.name)}</div>${isCup(l)?'':`<div class="segs"><button class="seg ${lsub=='j'?'on':''}" data-ls="j">Jogos</button><button class="seg ${lsub=='t'?'on':''}" data-ls="t">Tabela</button><button class="seg ${lsub=='m'?'on':''}" data-ls="m">Marcadores</button></div>`}`;
   if(lsub==='j'){const all=evs().filter(x=>x.l.id===l.id),t0=Date.now();
     const up=all.filter(x=>state(x)!=='post'),rec=all.filter(x=>state(x)==='post').reverse();
@@ -391,7 +397,7 @@ function cal(){
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i-7);return d}),cur=days[calD+7];
   const strip=`<div class="strip" id="strip">${days.map((d,i)=>`<button class="dd ${i-7===calD?'on':''} ${i===7?'td':''}" data-d="${i-7}">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]}<b>${d.getDate()}</b></button>`).join('')}</div>`;
   const ev=evs().filter(x=>new Date(x.e.date).toDateString()===cur.toDateString()&&(lg==='all'||x.l.id===lg)).sort((a,b)=>(favM(b)-favM(a))||(new Date(a.e.date)-new Date(b.e.date)));
-  setTimeout(()=>{const o=document.querySelector('#strip .on');o&&o.scrollIntoView({inline:'center',block:'nearest'})},0);
+  setTimeout(()=>{const o=document.querySelector('#strip .on');o&&o.scrollIntoView({inline:'center',block:'nearest'});ensureDay(calD)},0);
   return strip+`<div class="day">${esc(dayLbl(cur))}</div>`+(ev.length?grouped(ev,sty(),1):'<p class="msg">Sem jogos neste dia.</p>');
 }
 /* ===== notícias e capas ===== */
