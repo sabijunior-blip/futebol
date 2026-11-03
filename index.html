@@ -26,6 +26,12 @@ h1 small{font-size:12px;font-weight:500;color:var(--mute)}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:99px;font:600 13px system-ui;display:flex;align-items:center}
 .chip.on,.seg.on{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.lb{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--acc);color:var(--onacc);margin-right:6px;flex:none;overflow:hidden;vertical-align:-4px}
+.lb b{font-size:7px;font-weight:800}
+.lb img{position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:contain;background:var(--card);margin:0!important}
+.lg .lb{width:22px;height:22px}.lg .lb b{font-size:8px}
+.tile .lb{width:30px;height:30px;margin:0}.tile .lb b{font-size:11px}
+.ph .lb{width:40px;height:40px;margin:0}.ph .lb b{font-size:13px}
 main{padding:12px 14px;max-width:640px;margin:auto}
 .ll{width:18px;height:18px;object-fit:contain;margin-right:6px}
 .day,.sub{font-weight:700;font-size:14px;color:var(--mute);margin:16px 0 6px;text-transform:capitalize}
@@ -65,7 +71,7 @@ main{padding:12px 14px;max-width:640px;margin:auto}
 .ti.lv .d:after{background:var(--live)}
 .strip{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;scrollbar-width:none;padding-bottom:2px}
 .strip::-webkit-scrollbar{display:none}
-.dd{flex:none;width:50px;text-align:center;padding:6px 0;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 12px system-ui;text-transform:capitalize}
+.dd{flex:none;width:50px;text-align:center;padding:6px 0;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 12px system-ui}
 .dd b{display:block;font-size:16px}
 .dd.on{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
 .dd.td{border-color:var(--acc)}
@@ -209,7 +215,8 @@ let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}c
 const save=()=>{try{localStorage.setItem('fut',JSON.stringify(S))}catch{}};
 let tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
 const MAP=new Map();let loaded=false,badAll=false;
-const LGI=l=>l.lg?`<img class="ll" src="https://a.espncdn.com/i/leaguelogos/soccer/500/${l.lg}.png" alt="" onerror="this.style.display='none'">`:'';
+const INI={'uefa.champions':'LC','uefa.europa':'LE','uefa.europa.conf':'LCf','por.taca.portugal':'TP','por.league_cup':'TL','por.2':'L2','eng.fa':'FA','eng.league_cup':'EFL','esp.copa_del_rey':'CR','ita.coppa_italia':'CI','ger.dfb_pokal':'DFB','fra.coupe_de_france':'CF'};
+const LGI=l=>`<span class="lb"><b>${esc(INI[l.id]||l.name.split(' ').map(w=>w[0]).join('').slice(0,3))}</b>${l.lg?`<img src="https://a.espncdn.com/i/leaguelogos/soccer/500/${l.lg}.png" alt="" onerror="this.remove()">`:''}</span>`;
 const hm=d=>d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
 const dayLbl=d=>d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
 const ymd=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
@@ -343,17 +350,20 @@ function inicio(){
   const rec=all.filter(x=>state(x)==='post'&&favM(x)).reverse().slice(0,4);
   const tod=all.filter(x=>new Date(x.e.date).toDateString()===new Date().toDateString());
   const tiles=LEAGUES.map(l=>{const n=tod.filter(x=>x.l.id===l.id).length,v=tod.filter(x=>x.l.id===l.id&&isLive(x)).length;
-    return `<button class="tile" data-lg="${l.id}">${LGI(l)||'<div style="font-size:26px">🏆</div>'}<b>${esc(l.name)}</b><small>${n} jogo${n==1?'':'s'} hoje${v?` · <i>${v} em direto</i>`:''}</small></button>`}).join('');
+    return `<button class="tile" data-lg="${l.id}">${LGI(l)}<b>${esc(l.name)}</b><small>${n} jogo${n==1?'':'s'} hoje${v?` · <i>${v} em direto</i>`:''}</small></button>`}).join('');
   return diaCard(up)+`<div class="sub">Os meus próximos jogos</div>`+(fu.length?timeline(fu,sty()):'<p class="hint">Sem jogos próximos das tuas equipas. Podes adicionar mais equipas em Definições.</p>')
    +(rec.length?`<div class="sub">Resumos e resultados</div>${rec.map(x=>card(x,sty()==='big'?'row':sty())).join('')}`:'')
    +`<div class="sub">Competições</div><div class="tiles">${tiles}</div>`;
 }
 /* ===== liga ===== */
+const isCup=l=>/taca|cup|copa|coppa|pokal|coupe|\.fa$/.test(l.id);
 async function ligaView(){
-  const l=liga,hd=`<button class="back" data-lg="">← Início</button><div class="lg" style="font-size:16px">${LGI(l)}${esc(l.name)}</div><div class="segs"><button class="seg ${lsub=='j'?'on':''}" data-ls="j">Jogos</button><button class="seg ${lsub=='t'?'on':''}" data-ls="t">Tabela</button><button class="seg ${lsub=='m'?'on':''}" data-ls="m">Marcadores</button></div>`;
+  const l=liga;if(isCup(l))lsub='j';
+  if(lsub==='j'&&!CACHE['lw'+l.id]){CACHE['lw'+l.id]=1;await pullRange(-60,60,[l.id])}
+  const hd=`<button class="back" data-lg="">← Início</button><div class="lg" style="font-size:16px">${LGI(l)}${esc(l.name)}</div>${isCup(l)?'':`<div class="segs"><button class="seg ${lsub=='j'?'on':''}" data-ls="j">Jogos</button><button class="seg ${lsub=='t'?'on':''}" data-ls="t">Tabela</button><button class="seg ${lsub=='m'?'on':''}" data-ls="m">Marcadores</button></div>`}`;
   if(lsub==='j'){const all=evs().filter(x=>x.l.id===l.id),t0=Date.now();
     const up=all.filter(x=>state(x)!=='post'),rec=all.filter(x=>state(x)==='post').reverse();
-    return hd+(up.length?`<div class="sub">Próximos</div>`+grouped(up,sty()):'')+(rec.length?`<div class="sub">Resultados recentes</div>`+grouped(rec,sty()):'')+(all.length?'':'<p class="msg">Sem jogos nesta competição nos próximos dias.</p>')}
+    return hd+(up.length?`<div class="sub">Próximos</div>`+grouped(up,sty()):'')+(rec.length?`<div class="sub">Resultados recentes</div>`+grouped(rec,sty()):'')+(all.length?'':'<p class="msg">Sem jogos encontrados nesta competição. Pode não estar disponível na fonte (ESPN).</p>')}
   if(lsub==='t')return hd+await tabela(l);
   return hd+await marcadores(l);
 }
@@ -379,7 +389,7 @@ async function marcadores(l){
 function cal(){
   if(!loaded)return '<p class="msg">A carregar…</p>';
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i-7);return d}),cur=days[calD+7];
-  const strip=`<div class="strip" id="strip">${days.map((d,i)=>`<button class="dd ${i-7===calD?'on':''} ${i===7?'td':''}" data-d="${i-7}">${d.toLocaleDateString('pt-PT',{weekday:'short'}).replace('.','')}<b>${d.getDate()}</b></button>`).join('')}</div>`;
+  const strip=`<div class="strip" id="strip">${days.map((d,i)=>`<button class="dd ${i-7===calD?'on':''} ${i===7?'td':''}" data-d="${i-7}">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]}<b>${d.getDate()}</b></button>`).join('')}</div>`;
   const ev=evs().filter(x=>new Date(x.e.date).toDateString()===cur.toDateString()&&(lg==='all'||x.l.id===lg)).sort((a,b)=>(favM(b)-favM(a))||(new Date(a.e.date)-new Date(b.e.date)));
   setTimeout(()=>{const o=document.querySelector('#strip .on');o&&o.scrollIntoView({inline:'center',block:'nearest'})},0);
   return strip+`<div class="day">${esc(dayLbl(cur))}</div>`+(ev.length?grouped(ev,sty(),1):'<p class="msg">Sem jogos neste dia.</p>');
