@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Futebol">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f6b4a">
+<meta name="theme-color" content="#0b0f0d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -18,7 +18,7 @@
 *{box-sizing:border-box;margin:0}
 html,body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
 html,body{height:100%}
-body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+body{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden}
 #scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 button{font-family:inherit}
 header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 14px 8px;border-bottom:1px solid var(--line)}
@@ -191,6 +191,7 @@ td.p{color:var(--ink)}
 .news{border-radius:18px}
 .opt,.seg{border-radius:16px}
 .ch{background:var(--acc);color:var(--onacc);border-radius:99px}
+.ch.f{background:var(--line);color:var(--ink)}
 .box{border-radius:18px}
 .cw{border-radius:18px}
 #sheet>.p{border-radius:26px 26px 0 0}
@@ -243,7 +244,10 @@ const LEAGUES=[
 ];
 const SITES=['abola.pt','record.pt','ojogo.pt','rtp.pt','maisfutebol.iol.pt'];
 // Canais em Portugal por competição (edita aqui se os direitos mudarem)
-const CANAIS_PT={'por.1':['Sport TV'],'eng.1':['DAZN'],'eng.2':['Sport TV'],'esp.1':['DAZN'],'ita.1':['Sport TV'],'ger.1':['DAZN'],'fra.1':['Sport TV'],'uefa.champions':['Sport TV','DAZN'],'uefa.europa':['Sport TV','DAZN'],'uefa.europa.conf':['Sport TV','DAZN'],'por.taca.portugal':['Sport TV','RTP'],'por.league_cup':['Sport TV']};
+// Só competições com canal único confirmado em fontes oficiais ou notícias. O canal exato de cada jogo vem do canais.json.
+const CANAIS_PT={'por.1':['Sport TV'],'ita.1':['Sport TV'],'ger.1':['DAZN'],'uefa.champions':['Sport TV','DAZN'],'uefa.europa':['Sport TV','DAZN'],'uefa.europa.conf':['Sport TV','DAZN']};
+// Competições em que só passam alguns jogos em Portugal: mostra os canais de origem (Reino Unido)
+const CANAIS_EXT={'eng.2':{pais:'Reino Unido',c:['Sky Sports Football','Sky Sports Main Event','Sky Sports+'],nota:'Em Portugal só passam alguns jogos da Championship (os selecionados pela Sport TV). Se este estiver no guia, o canal aparece acima.'}};
 const CAPAS=[['A Bola','jornal_a_bola'],['Record','jornal_record'],['O Jogo','jornal_o_jogo'],['Marca','jornal_marca'],['AS','jornal_as'],['Mundo Deportivo','jornal_mundo_deportivo'],['Sport','jornal_sport'],['Gazzetta dello Sport','la_gazzeta_dello_sport'],['Corriere dello Sport','corriere_dello_sport'],['Tuttosport','jornal_tuttosport'],['L’Équipe','jornal_l_equipe']];
 const LAY={
  p:{n:'Principal',c:'center'},
@@ -261,7 +265,7 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const DEF={lay:'p',mode:'auto',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false,canal:{}};
 let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}catch{}
 const save=()=>{try{localStorage.setItem('fut',JSON.stringify(S))}catch{}};
-let tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
+let CFG={},tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
 const MAP=new Map();let loaded=false,badAll=false;
 const INI={'uefa.champions':'LC','uefa.europa':'LE','uefa.europa.conf':'LCf','por.taca.portugal':'TP','por.league_cup':'TL','por.2':'L2','eng.fa':'FA','eng.league_cup':'EFL','esp.copa_del_rey':'CR','ita.coppa_italia':'CI','ger.dfb_pokal':'DFB','fra.coupe_de_france':'CF'};
 const LGI=l=>`<span class="lb"><b>${esc(INI[l.id]||l.name.split(' ').map(w=>w[0]).join('').slice(0,3))}</b>${l.lg?`<img src="https://a.espncdn.com/i/leaguelogos/soccer/500/${l.lg}.png" alt="" onerror="this.remove()">`:''}</span>`;
@@ -537,8 +541,8 @@ async function chanFor(x){
 async function loadChan(x){
   const gen=CANAIS_PT[x.l.id]||[],[h,w]=cp(x),q=encodeURIComponent(`${h.team.displayName} ${w.team.displayName} canal onde ver`),ex=await chanFor(x);
   if(!$('#chn'))return;
-  const usual=x.l.id==='uefa.champions'&&cp(x).some(y=>/sporting cp|benfica|porto|braga/i.test(y.team.displayName))?['Sport TV 5']:[];
-  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal ainda não publicado para este jogo.</div>':'<div class="st">Sem informação de canal em Portugal.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
+  const ext=CANAIS_EXT[x.l.id],usual=x.l.id==='uefa.champions'&&cp(x).some(y=>/sporting cp|benfica|porto|braga/i.test(y.team.displayName))?['Sport TV 5']:[];
+  $('#chn').innerHTML=(ex.length?ex.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal exato</div>':ext?ext.c.map(c=>`<span class="ch f">${esc(c)}</span>`).join('')+`<div class="st">${esc(ext.pais)}. ${esc(ext.nota)}</div>`:usual.length?usual.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal habitual dos jogos da Liga dos Campeões de equipas portuguesas. Não é confirmado para este jogo.</div>':gen.length?gen.map(c=>`<span class="ch">${esc(c)}</span>`).join('')+'<div class="st">Canal ainda não publicado para este jogo.</div>':'<div class="st">Canal em Portugal ainda não confirmado para este jogo.</div>')+`<div style="margin-top:6px"><a href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">Procurar o canal exato</a></div>`;
 }
 function openD(id){
   const x=evs().find(y=>y.e.id===id);if(!x)return;CUR=x;clearInterval(TMR);
@@ -592,13 +596,16 @@ async function lineups(){
 async function vid(x){
   const [h,w]=cp(x),el=$('#vid'),qs=encodeURIComponent(`${h.team.displayName} ${w.team.displayName} resumo`);
   const ext=`<a href="https://www.youtube.com/results?search_query=${qs}" target="_blank" rel="noopener">Procurar no YouTube</a>`;
-  if(!S.yt){el.innerHTML=`<div class="st" style="margin-bottom:6px">Para ver o vídeo aqui dentro, junta a chave da YouTube Data API em Definições → Resumos em vídeo.</div>${ext}`;return}
-  try{const d=await j(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&regionCode=PT&relevanceLanguage=pt&publishedAfter=${encodeURIComponent(new Date(x.e.date).toISOString())}&q=${qs}&key=${encodeURIComponent(S.yt)}`);
+  const KEY=S.yt||CFG.yt||'';
+  try{const c=JSON.parse(localStorage.getItem('fut_v'+x.e.id)||'null');if(c&&c.length){el.innerHTML=`<iframe id="vf" src="https://www.youtube-nocookie.com/embed/${c[0].v}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px" allow="autoplay;encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe><div class="vc">${c.map(i=>`<button data-vid="${i.v}">${esc(i.c)}</button>`).join('')}</div>`;return}}catch{}
+  if(!KEY){el.innerHTML=`<div class="st" style="margin-bottom:6px">Para ver o vídeo aqui dentro, junta a chave da YouTube Data API em Definições → Resumos em vídeo.</div>${ext}`;return}
+  try{const d=await j(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&regionCode=PT&relevanceLanguage=pt&publishedAfter=${encodeURIComponent(new Date(x.e.date).toISOString())}&q=${qs}&key=${encodeURIComponent(KEY)}`);
     const it=(d.items||[]).filter(i=>i.id?.videoId);
     if(!$('#vid'))return;
     if(!it.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo publicado.</div>${ext}`;return}
     const pref=/vsport|sport tv|sporttv|dazn|liga portugal|laliga|bundesliga|premier league|serie a|ligue 1|canal 11|uefa/i;
     it.sort((a,b)=>pref.test(b.snippet.channelTitle)-pref.test(a.snippet.channelTitle));
+    try{localStorage.setItem('fut_v'+x.e.id,JSON.stringify(it.slice(0,4).map(i=>({v:i.id.videoId,c:i.snippet.channelTitle}))))}catch{}
     el.innerHTML=`<iframe id="vf" src="https://www.youtube-nocookie.com/embed/${it[0].id.videoId}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:12px" allow="autoplay;encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe><div class="vc">${it.slice(0,4).map(i=>`<button data-vid="${i.id.videoId}">${esc(i.snippet.channelTitle)}</button>`).join('')}</div>`;
   }catch{if($('#vid'))el.innerHTML=`<div class="st" style="margin-bottom:6px">Não foi possível obter o vídeo (verifica a chave da API).</div>${ext}`}
 }
@@ -684,6 +691,7 @@ async function render(){
   const h=await (nsub==='c'?capas():noticias());
   if(my===tok)$('#main').innerHTML=sw+h;
 }
+fetch('config.json?t='+Math.floor(Date.now()/36e5)).then(r=>r.ok?r.json():{}).then(c=>{CFG=c||{}}).catch(()=>{});
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 theme();chips();render();load(true);
 setInterval(()=>{if(!document.hidden)load()},60000);
