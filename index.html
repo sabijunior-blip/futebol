@@ -17,9 +17,11 @@
 [data-mode=d]{--bg:#0e1519;--card:#16212a;--ink:#e8eef2;--mute:#8fa0ab;--line:#26343e;--live:#ff6b5e}
 *{box-sizing:border-box;margin:0}
 html,body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
-body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+html,body{height:100%}
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+#scroll{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 button{font-family:inherit}
-header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 14px 8px;border-bottom:1px solid var(--line)}
+header{flex:none;position:relative;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 14px 8px;border-bottom:1px solid var(--line)}
 h1{font-size:20px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
 h1 small{font-size:12px;font-weight:500;color:var(--mute)}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
@@ -151,7 +153,7 @@ tr[data-club]{cursor:pointer}
 .av{position:relative;width:40px;height:40px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--mute);flex:none;overflow:hidden}
 .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #toast{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:50;background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;font-weight:600;font-size:14px;display:none;max-width:616px;margin:auto}
-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 nav button{flex:1;border:0;background:none;color:var(--mute);font:600 11px system-ui;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{color:var(--acc)}
@@ -162,7 +164,7 @@ nav button.on{color:var(--acc)}
   <h1>Futebol <small id="upd"></small></h1>
   <div class="chips" id="chips"></div>
 </header>
-<main id="main"><p class="msg">A carregar…</p></main>
+<div id="scroll"><main id="main"><p class="msg">A carregar…</p></main></div>
 <div id="sheet"><div class="p"><div class="bar"><span id="stt"></span><button id="cl" aria-label="Fechar">✕</button></div><div id="sc"></div></div></div>
 <div id="lb"><button id="lbx" aria-label="Fechar">✕</button><img id="lbi" alt=""></div>
 <div id="toast"></div>
@@ -209,6 +211,7 @@ const LAY={
 const ACC={verde:['#0f6b4a','#3dbd8d'],azul:['#1d5fd1','#6aa3ff'],laranja:['#d4570f','#ff9a5c'],roxo:['#6b3fd1','#a98bff'],vermelho:['#c62828','#ff7a72'],amarelo:['#a87800','#ffd400']};
 const ESPN='https://site.api.espn.com/apis/',CORE='https://sports.core.api.espn.com/v2/sports/soccer/leagues/';
 const $=s=>document.querySelector(s);
+const top0=()=>{const e=document.querySelector('#scroll');if(e)e.scrollTop=0};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const DEF={lay:'p',mode:'auto',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false,canal:{}};
 let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}catch{}
@@ -237,7 +240,7 @@ function chips(){
 }
 $('#chips').onclick=e=>{const b=e.target.closest('[data-l]');if(!b)return;lg=b.dataset.l;chips();render()};
 document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;tab=b.dataset.t;liga=null;
-  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));chips();render();scrollTo(0,0)};
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));chips();render();top0()};
 
 /* ===== dados ===== */
 const dOff=n=>{const d=new Date();d.setDate(d.getDate()+n);return d};
@@ -397,7 +400,7 @@ function cal(){
   const days=[...Array(14)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i-7);return d}),cur=days[calD+7];
   const strip=`<div class="strip" id="strip">${days.map((d,i)=>`<button class="dd ${i-7===calD?'on':''} ${i===7?'td':''}" data-d="${i-7}">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][d.getDay()]}<b>${d.getDate()}</b></button>`).join('')}</div>`;
   const ev=evs().filter(x=>new Date(x.e.date).toDateString()===cur.toDateString()&&(lg==='all'||x.l.id===lg)).sort((a,b)=>(favM(b)-favM(a))||(new Date(a.e.date)-new Date(b.e.date)));
-  setTimeout(()=>{const o=document.querySelector('#strip .on');o&&o.scrollIntoView({inline:'center',block:'nearest'});ensureDay(calD)},0);
+  setTimeout(()=>{const st=document.querySelector('#strip'),o=document.querySelector('#strip .on');if(st&&o)st.scrollLeft=o.offsetLeft-st.clientWidth/2+o.offsetWidth/2;ensureDay(calD)},0);
   return strip+`<div class="day">${esc(dayLbl(cur))}</div>`+(ev.length?grouped(ev,sty(),1):'<p class="msg">Sem jogos neste dia.</p>');
 }
 /* ===== notícias e capas ===== */
@@ -500,7 +503,7 @@ function openD(id){
   ${v?.fullName?`<div class="st" style="text-align:center">${esc(v.fullName)}${v.address?.city?', '+esc(v.address.city):''}</div>`:''}
   ${post?'<div class="box"><h4>Resumo em vídeo</h4><div id="vid"><div class="st">A procurar…</div></div></div>':chan()}
   ${pre?'':'<div class="box"><h4>Linha do tempo</h4><div id="tl"><div class="st">A carregar…</div></div></div>'}
-  <button class="opt" id="lu" style="margin-top:10px">Constituições e tática</button><div id="lub"></div>`);
+  ${isCup(x.l)?'':'<button class="opt" id="tb" style="margin-top:10px">Tabela · '+esc(x.l.name)+'</button>'}<button class="opt" id="lu"${isCup(x.l)?' style="margin-top:10px"':''}>Constituições e tática</button><div id="lub"></div>`);
   if(post)vid(x);else loadChan(x);
   if(!pre){tline(x);if(isLive(x))TMR=setInterval(()=>tline(x,true),45000)}
 }
@@ -525,6 +528,13 @@ function pitch(rs){
       rw.forEach((p,i)=>{if(!p)return;const x=(i+1)/(rw.length+1)*100,n=esc(String(p.athlete?.shortName||p.athlete?.displayName||'').slice(0,13));
         g+=`<circle cx="${x}" cy="${y}" r="4.7" fill="${col}" stroke="#fff" stroke-width=".7"/><text x="${x}" y="${y+1.5}" text-anchor="middle" font-size="4.2" font-weight="700" fill="#fff" stroke="#000" stroke-width=".25" paint-order="stroke">${esc(p.jersey||'')}</text><text x="${x}" y="${y+8.4}" text-anchor="middle" font-size="3.1" fill="#fff" stroke="#000" stroke-width=".6" paint-order="stroke">${n}</text>`})})});
   return g+'</svg>';
+}
+async function showTab(){
+  const x=CUR,el=$('#lub');if(!x)return;el.innerHTML='<p class="msg">A carregar…</p>';
+  const h=await tabela(x.l);if(CUR!==x)return;
+  el.innerHTML=`<div class="box" style="padding:6px;overflow-x:auto">${h}</div>`;
+  const ids=cp(x).map(y=>String(y.team.id));
+  el.querySelectorAll('tr[data-club]').forEach(r=>{if(ids.includes(r.dataset.club.split('|')[0]))r.style.background='color-mix(in srgb,var(--acc) 22%,transparent)'});
 }
 async function lineups(){
   const x=CUR,el=$('#lub');if(!x)return;el.innerHTML='<p class="msg">A carregar…</p>';
@@ -608,9 +618,10 @@ document.addEventListener('click',async e=>{
   if(t.closest('#rs')){S={...DEF};save();theme();render();return}
   if(b=t.closest('[data-cv]')){const i=$('#lbi'),u=b.dataset.cv.split('|');i.classList.remove('z');i.dataset.u=b.dataset.cv;i.dataset.i=0;i.referrerPolicy='no-referrer';i.onerror=()=>{const k=+i.dataset.i+1;i.dataset.i=k;if(k<u.length)i.src=u[k]};i.src=u[0];$('#lb').classList.add('on');return}
   if(b=t.closest('[data-d]')){calD=+b.dataset.d;render();return}
-  if(b=t.closest('[data-lg]')){liga=b.dataset.lg?L1(b.dataset.lg):null;lsub='j';render();scrollTo(0,0);return}
+  if(b=t.closest('[data-lg]')){liga=b.dataset.lg?L1(b.dataset.lg):null;lsub='j';render();top0();return}
   if(b=t.closest('[data-club]')){const [id,l,n]=b.dataset.club.split('|');openClub(id,l,n);return}
   if(b=t.closest('[data-id]')){openD(b.dataset.id);return}
+  if(t.closest('#tb')){showTab();return}
   if(t.closest('#lu')){lineups();return}
   if(b=t.closest('[data-vid]')){$('#vf').src='https://www.youtube-nocookie.com/embed/'+b.dataset.vid;return}
   if(b=t.closest('[data-ct]')){document.querySelectorAll('.cpn').forEach(x=>x.style.display=x.dataset.p===b.dataset.ct?'block':'none');document.querySelectorAll('.tabs .seg').forEach(s=>s.classList.toggle('on',s===b));return}
