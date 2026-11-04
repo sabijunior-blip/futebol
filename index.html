@@ -8,11 +8,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Futebol">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0B0F14">
+<meta name="theme-color" content="#0f6b4a">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="theme.css">
 <style>
 :root{--bg:#eef1f3;--card:#fff;--ink:#14212b;--mute:#5d6b76;--line:#d9e0e5;--live:#d6342c;--acc:#0f6b4a;--onacc:#fff}
 [data-mode=d]{--bg:#0e1519;--card:#16212a;--ink:#e8eef2;--mute:#8fa0ab;--line:#26343e;--live:#ff6b5e}
@@ -214,7 +213,7 @@ const ESPN='https://site.api.espn.com/apis/',CORE='https://sports.core.api.espn.
 const $=s=>document.querySelector(s);
 const top0=()=>{const e=document.querySelector('#scroll');if(e)e.scrollTop=0};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const DEF={lay:'p',mode:'escuro',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false,canal:{}};
+const DEF={lay:'p',mode:'auto',acc:'verde',favs:[{name:'Sporting CP',full:'Sporting CP',lg:'por.1'}],yt:'',notif:false,canal:{}};
 let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}catch{}
 const save=()=>{try{localStorage.setItem('fut',JSON.stringify(S))}catch{}};
 let tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
