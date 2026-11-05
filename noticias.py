@@ -39,11 +39,11 @@ SITES = " OR ".join("site:" + d for d in ["abola.pt", "record.pt", "ojogo.pt", "
 NOW = datetime.datetime.now(datetime.timezone.utc)
 CUT = NOW - datetime.timedelta(days=15)
 
-def fetch(url):
+def fetch(url, limit=None):
     try:
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Accept-Language": "pt-PT,pt;q=0.9"})
         with urllib.request.urlopen(req, timeout=20) as r:
-            raw = r.read()
+            raw = r.read(limit) if limit else r.read()
         return raw.decode("utf-8", "replace")
     except Exception:
         return None
@@ -162,33 +162,39 @@ def gnews(item):
             out.append({"t": title, "u": link, "i": "", "s": src or "Google News", "d": tdate(it.findtext("pubDate")).isoformat(), "x": "", "force": lid})
     return out
 
+SPORTS_SRC = {"A Bola", "Record", "O Jogo", "Maisfutebol", "zerozero", "Bola na Rede", "SAPO Desporto"}
+# palavras só de futebol (anulam a exclusão de outras modalidades)
+HARD = re.compile(r"(?<![a-z0-9])(futebol|futebolist\w*|golos?|guarda-redes|avancado\w*|penalti\w*|fora de jogo|livre direto|canto|dérbi|derbi|liga dos campeoes|champions|premier league|la liga|serie a|bundesliga|ligue 1|primeira liga|liga portugal|taca de portugal)(?![a-z0-9])")
+# palavras gerais de desporto (aceites só em jornais desportivos)
+STRONG = re.compile(r"(?<![a-z0-9])(treinador\w*|medio\w*|defesa\w*|arbitr\w*|var|fifa|uefa|jornada|transferenc\w*|estadio\w*|empat\w*|derrota\w*|vitoria\w*|liga|taca|campeonato|selecao|clube\w*|equipa\w*|jogador\w*|mercado|onze|convocad\w*)(?![a-z0-9])")
+OTHER = re.compile(r"(?<![a-z0-9])(basquetebol|basquete|nba|andebol|voleibol|hoquei|tenis|formula 1|f1|motogp|ciclismo|volta a portugal|rali|rugby|ragui|natacao|atletismo|surf|judo|golfe|padel|futsal|esports?|poker|boxe|mma|ufc)(?![a-z0-9])")
+SPORT_URL = re.compile(r"/(desporto|futebol|sport|sports|futebol-nacional|futebol-internacional)(/|-|\.|$)")
+SECTION = re.compile(r"^(noticias?|news)\s*(de\s*)?(spain|portugal|espanha|mundo|internacional)?$")
+
+def relevant(i, g):
+    title = nz(i["t"]); text = title + " " + nz(i.get("x", ""))
+    if SECTION.match(re.sub(r"[^a-z ]", "", title).strip()) or (len(title.split()) <= 3 and title.startswith("noticias")):
+        return False
+    hard = bool(HARD.search(text)); strong = bool(STRONG.search(text)); other = bool(OTHER.search(text))
+    if other and not hard:
+        return False
+    if i["s"] in SPORTS_SRC or i.get("force"):
+        return bool(g) or hard or strong
+    return (bool(g) or hard) and (bool(SPORT_URL.search(urllib.parse.urlparse(i["u"]).path.lower())) or bool(i.get("force")))
+
+def og_image(url):
+    t = fetch(url, 200000)
+    if not t:
+        return ""
+    for pat in (r'<meta[^>]+property=["\']og:image["\'][^>]*content=["\']([^"\']+)', r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+                r'<meta[^>]+name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)'):
+        m = re.search(pat, t, re.I)
+        if m:
+            u = html.unescape(m.group(1))
+            return urllib.parse.urljoin(url, u) if not u.startswith("http") else u
+    return ""
+
 def main():
-    items = []
-    with ThreadPoolExecutor(max_workers=6) as ex:
-        for r in ex.map(source_items, SOURCES):
-            items += r
-        for r in ex.map(gnews, GN):
-            items += r
-    seen, res = set(), []
-    for i in sorted(items, key=lambda i: i["d"], reverse=True):
-        if tdate(i["d"]) < CUT:
-            continue
-        key = nz(re.sub(r"\W+", "", i["t"]))[:80]
-        if key in seen or i["u"] in seen:
-            continue
-        seen.add(key); seen.add(i["u"])
-        g = tags(i["t"] + " " + i.get("x", ""))
-        if i.get("force") and i["force"] not in g:
-            g.append(i["force"])
-        fut = bool(g) or any(w in nz(i["t"]) for w in FUT)
-        if not fut:
-            continue
-        res.append({"t": i["t"], "u": i["u"], "i": i["i"], "s": i["s"], "d": i["d"], "g": g})
-    res = res[:400]
-    if not res:
-        print("nenhuma notícia obtida; mantém o ficheiro antigo")
-        return
-    os.makedirs("data", exist_ok=True)
     p = "data/noticias.json"
     old = []
     if os.path.exists(p):
@@ -196,9 +202,54 @@ def main():
             old = json.load(open(p, encoding="utf-8")).get("items", [])
         except Exception:
             old = []
+    oldimg = {o["u"]: o["i"] for o in old if o.get("i")}
+    items = []
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for r in ex.map(source_items, SOURCES):
+            items += r
+        for r in ex.map(gnews, GN):
+            items += r
+    best = {}
+    for i in sorted(items, key=lambda i: i["d"], reverse=True):
+        if tdate(i["d"]) < CUT:
+            continue
+        g = tags(i["t"] + " " + i.get("x", ""))
+        if i.get("force") and i["force"] not in g:
+            g.append(i["force"])
+        if not relevant(i, g):
+            continue
+        i["g"] = g
+        key = nz(re.sub(r"\W+", "", i["t"]))[:80]
+        cur = best.get(key)
+        google = "news.google.com" in i["u"]
+        if cur is None:
+            best[key] = i
+        else:
+            curg = "news.google.com" in cur["u"]
+            if (curg and not google) or (not cur["i"] and i["i"]):
+                i["g"] = sorted(set(i["g"]) | set(cur["g"]))
+                best[key] = i
+            else:
+                cur["g"] = sorted(set(cur["g"]) | set(g))
+    res = sorted(best.values(), key=lambda i: i["d"], reverse=True)[:400]
+    # imagens em falta: reutiliza as anteriores ou lê a imagem da própria página (máx. 150 por execução)
+    todo = []
+    for i in res:
+        if not i["i"] and i["u"] in oldimg:
+            i["i"] = oldimg[i["u"]]
+        if not i["i"] and "news.google.com" not in i["u"]:
+            todo.append(i)
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for i, img in zip(todo[:150], ex.map(og_image, [t["u"] for t in todo[:150]])):
+            i["i"] = img
+    res = [{"t": i["t"], "u": i["u"], "i": i["i"], "s": i["s"], "d": i["d"], "g": i["g"]} for i in res]
+    if not res:
+        print("nenhuma notícia obtida; mantém o ficheiro antigo")
+        return
+    os.makedirs("data", exist_ok=True)
     if old != res:
         json.dump({"t": NOW.isoformat(), "items": res}, open(p, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    print("notícias", len(res), "fontes com imagem", sum(1 for r in res if r["i"]))
+    print("notícias", len(res), "com imagem", sum(1 for r in res if r["i"]))
 
 if __name__ == "__main__":
     main()
