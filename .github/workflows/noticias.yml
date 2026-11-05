@@ -1,0 +1,30 @@
+name: Atualizar notícias
+on:
+  schedule:
+    - cron: "20 */2 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - noticias.py
+      - noticias.yml
+permissions:
+  contents: write
+concurrency:
+  group: atualizar-dados
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Executar
+        run: python noticias.py
+      - name: Gravar alterações
+        run: |
+          git config user.name "noticias-bot"
+          git config user.email "noticias-bot@users.noreply.github.com"
+          git add data/noticias.json
+          git diff --cached --quiet || (git commit -m "Atualizar notícias" && git pull --rebase && git push)
