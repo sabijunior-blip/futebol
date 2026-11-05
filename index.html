@@ -203,6 +203,11 @@ nav{padding:3px 6px calc(env(safe-area-inset-bottom) * .4);background:color-mix(
 nav button{padding:6px 0 3px;font-size:10px;gap:1px;letter-spacing:0}
 nav svg{width:22px;height:22px}
 nav button.on svg{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--acc) 55%,transparent))}
+/* nomes completos das equipas */
+.t span{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;overflow-wrap:anywhere}
+.ctr .t:first-child{text-align:right}
+td.n{white-space:normal;max-width:none}
+.tmk{text-align:center;color:var(--mute);font-size:12px;padding:9px 0;border-bottom:1px solid var(--line);font-weight:600}
 </style>
 </head>
 <body>
@@ -473,7 +478,7 @@ function capas(){
     return `<div class="cw"><button data-cv="${esc(fu.join('|'))}"><img src="${th[0]}" data-u="${th.join('|')}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="capErr(this)"><small>${esc(n)}</small></button></div>`}).join('')}</div><p class="hint" style="margin-top:10px">Toca numa capa para ampliar e volta a tocar para ampliar mais. Portugueses primeiro. Fonte: capasjornais.pt.</p>`;
 }
 /* ===== definições ===== */
-const SS={lay:'Layout',cor:'Cores',eq:'Equipas',al:'Alertas',vid:'Resumos em vídeo',dg:'Diagnóstico'};
+const SS={lay:'Layout',cor:'Cores',eq:'Equipas',al:'Alertas',vid:'Resumos em vídeo',lp:'Armazenamento',dg:'Diagnóstico'};
 function defs(){
   if(!ss)return `<div class="set">${Object.entries(SS).map(([k,v])=>`<button class="opt" data-ss="${k}">${v} ›</button>`).join('')}</div>`;
   const back=`<button class="back" data-ss="">← Definições</button><h3>${SS[ss]}</h3>`;
@@ -482,6 +487,8 @@ function defs(){
   if(ss==='cor')return `<div class="set">${back}<div class="sub">Modo</div><div class="segs">${o('mode','auto','Auto')}${o('mode','claro','Claro')}${o('mode','escuro','Escuro')}</div><div class="sub">Cor de destaque</div><div class="sw">${Object.entries(ACC).map(([k,v])=>`<button class="${S.acc===k?'on':''}" data-s="acc" data-v="${k}" aria-label="${k}" style="background:${v[0]}"></button>`).join('')}</div></div>`;
   if(ss==='eq')return `<div class="set">${back}${S.favs.map((f,i)=>`<div class="opt ${i?'':'on'}" style="display:flex;justify-content:space-between;align-items:center"><span>${esc(f.full||f.name)}${i?'':' · principal'}</span><span>${i?`<button class="back" data-mf="${i}">Principal</button> `:''}${S.favs.length>1?`<button class="back" data-rf="${i}">✕</button>`:''}</span></div>`).join('')}<div class="sub">Adicionar equipa</div><div class="chips" style="flex-wrap:wrap">${LEAGUES.map(l=>`<button class="chip ${addLg===l.id?'on':''}" data-al="${l.id}">${LGI(l)}${l.name}</button>`).join('')}</div><div id="tp">${addLg?'<p class="msg">A carregar…</p>':''}</div></div>`;
   if(ss==='al')return `<div class="set">${back}<button class="opt ${S.notif?'on':''}" data-notif="1">${S.notif?'Alertas ativos':'Ativar alertas'}</button><p>Avisa quando uma das tuas equipas marca, quando o jogo começa e 15 minutos antes, com o canal. Funciona enquanto a app estiver aberta. Para receber com a app fechada é preciso um serviço externo de notificações, que ainda não está ligado.</p></div>`;
+  if(ss==='lp'){let n=0;try{Object.keys(localStorage).filter(k=>k.startsWith('fut')).forEach(k=>{n+=(localStorage.getItem(k)||'').length})}catch{}
+    return `<div class="set">${back}<p style="margin:0 0 10px">A app guarda no telemóvel só texto pequeno: jogos, calendários, os vídeos já encontrados (apenas o código do vídeo e o nome do canal) e as definições. Os vídeos em si nunca ficam guardados. Ocupa agora cerca de <b>${Math.max(1,Math.round(n/1024))} KB</b>.</p><button class="opt" data-clr="cache">Limpar jogos, vídeos e calendários guardados</button><button class="opt" data-clr="all">Limpar tudo, incluindo definições e equipas</button></div>`}
   if(ss==='dg')return `<div class="set">${back}<button class="opt" data-dg="1">Testar fontes de dados</button><div id="dgo"></div></div>`;
   return `<div class="set">${back}<div class="sub">Chave da YouTube Data API</div><input id="ytk" value="${esc(S.yt)}" placeholder="Cola aqui a chave" autocapitalize="off" autocorrect="off"><p>Com a chave, o resumo de cada jogo acabado aparece dentro da app (VSport, Sport TV, DAZN e outros). Fica guardada só neste telemóvel.</p><p><b>Como obter (grátis):</b> 1) vai a console.cloud.google.com e cria um projeto; 2) em APIs e serviços → Biblioteca, procura YouTube Data API v3 e ativa; 3) em Credenciais → Criar credenciais → Chave de API; 4) em Restrições da chave, escolhe Sites (referenciadores HTTP), junta https://UTILIZADOR.github.io/* e limita à YouTube Data API v3; 5) cola a chave aqui. A quota grátis dá cerca de 100 pesquisas por dia.</p></div>`;
 }
@@ -551,20 +558,52 @@ function openD(id){
   sheet(`${LGI(x.l)}${esc(x.l.name)}`,`<div class="dt">${tm(h)}<div class="mid">${pre?hm(d):esc(h.score)+' - '+esc(w.score)}<div class="st ${isLive(x)?'live':''}">${esc(pre?dayLbl(d):stTxt(x))}</div></div>${tm(w)}</div>
   ${v?.fullName?`<div class="st" style="text-align:center">${esc(v.fullName)}${v.address?.city?', '+esc(v.address.city):''}</div>`:''}
   ${post?'<div class="box"><h4>Resumo em vídeo</h4><div id="vid"><div class="st">A procurar…</div></div></div>':chan()}
-  ${pre?'':'<div class="box"><h4>Linha do tempo</h4><div id="tl"><div class="st">A carregar…</div></div></div>'}
-  ${isCup(x.l)?'':'<button class="opt" id="tb" style="margin-top:10px">Tabela · '+esc(x.l.name)+'</button>'}<button class="opt" id="lu"${isCup(x.l)?' style="margin-top:10px"':''}>Constituições e tática</button><div id="lub"></div>`);
+  <div class="tabs" id="mt"><button class="seg on" data-mt="r">Resumo</button>${isCup(x.l)?'':'<button class="seg" data-mt="t">Tabela</button>'}<button class="seg" data-mt="e">Escalação</button></div><div id="mc"></div>`);
   if(post)vid(x);else loadChan(x);
-  if(!pre){tline(x);if(isLive(x))TMR=setInterval(()=>tline(x,true),45000)}
+  mtab('r');
+  if(isLive(x))TMR=setInterval(()=>tline(x,true),45000);
 }
+function mtab(k){
+  const x=CUR;if(!x)return;
+  document.querySelectorAll('#mt .seg').forEach(b=>b.classList.toggle('on',b.dataset.mt===k));
+  const mc=$('#mc');if(!mc)return;
+  if(k==='r'){mc.innerHTML='<div class="box"><h4>Linha do tempo</h4><div id="tl"><div class="st">A carregar…</div></div></div>';
+    if(state(x)==='pre')$('#tl').innerHTML='<div class="st">O jogo ainda não começou.</div>';else tline(x)}
+  else{mc.innerHTML='<div id="lub"></div>';if(k==='t')showTab();else lineups()}
+}
+const evKind=t=>{t=String(t||'');
+  if(/yellow/i.test(t))return 'y';
+  if(/red card|straight red|second yellow|sent off/i.test(t))return 'r';
+  if(/subst/i.test(t))return 's';
+  if(/penalty/i.test(t)&&/miss|saved|wide|post|off target/i.test(t))return 'm';
+  if(/goal|penalty|scored/i.test(t))return 'g';
+  if(/half ?time|end (of )?(1st|first)|intervalo/i.test(t))return 'ht';
+  return '';
+};
+const EVI={g:'⚽',y:'🟨',r:'🟥',s:'🔁',m:'❌'};
 async function tline(x,fresh){
-  let ke=[],err='';
-  try{const d=await getSum(x,fresh);ke=(d.keyEvents||[]).filter(k=>/goal|card|subst|penalty/i.test(k.type?.text||k.type?.type||'')&&!/kickoff|half|end/i.test(k.type?.text||'')).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),tx:k.shortText||k.text||''}))}catch(e){err=String(e.message||e)}
-  if(!ke.length)ke=(x.e.competitions[0].details||[]).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.athletesInvolved||[]).map(p=>p.displayName),tx:''}));
+  let raw=[],err='';
+  try{const d=await getSum(x,fresh);raw=(d.keyEvents||[]).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||k.type?.type||'',tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),tx:k.shortText||k.text||''}))}catch(e){err=String(e.message||e)}
+  if(!raw.some(k=>evKind(k.t)&&evKind(k.t)!=='ht'))raw=raw.filter(k=>evKind(k.t)==='ht').concat((x.e.competitions[0].details||[]).map(k=>({m:k.clock?.displayValue||'',v:k.clock?.value||0,t:k.type?.text||'',tm:k.team?.id,p:(k.athletesInvolved||[]).map(p=>p.displayName),tx:''})));
   const el=$('#tl');if(!el||CUR!==x)return;
-  const [h]=cp(x),ic=t=>/yellow/i.test(t)?'🟨':/red/i.test(t)?'🟥':/subst/i.test(t)?'🔁':'⚽';
-  ke.sort((a,b)=>a.v-b.v);
-  el.innerHTML=ke.length?ke.map(k=>{const home=String(k.tm)===String(h.team.id),txt=`${ic(k.t)} ${esc(k.p.length?(/subst/i.test(k.t)&&k.p.length>1?k.p[0]+' ↔ '+k.p[1]:k.p[0]):k.tx)}`;
-    return `<div class="tle"><div>${home?txt:''}</div><b>${esc(k.m)}</b><div class="a">${home?'':txt}</div></div>`}).join(''):'<div class="st">Ainda sem eventos publicados.'+(err?' (erro '+esc(err)+')':'')+'</div>';
+  const [h,w]=cp(x),post=state(x)==='post',live=isLive(x);
+  const items=raw.map(k=>({...k,k:evKind(k.t)})).filter(k=>k.k).sort((a,b)=>a.v-b.v);
+  const ht=items.find(k=>k.k==='ht'),ev=items.filter(k=>k.k!=='ht');
+  const mk=(t)=>`<div class="tmk">${t}</div>`;
+  const row=k=>{const home=String(k.tm)===String(h.team.id),pl=k.p||[];
+    let nm=pl[0]||k.tx||'';
+    if(k.k==='s'&&pl.length>1)nm=pl[0]+' ↔ '+pl[1];
+    if(k.k==='g'){if(/own/i.test(k.t))nm+=' (auto-golo)';else if(/penalty/i.test(k.t))nm+=' (g.p.)';if(pl[1]&&!/own|penalty/i.test(k.t))nm+=` <span class="st">(ass. ${esc(pl[1])})</span>`}
+    if(k.k==='m')nm='Penálti falhado: '+nm;
+    const txt=`${EVI[k.k]} ${k.k==='g'?'<b>':''}${k.k==='g'&&pl[1]&&!/own|penalty/i.test(k.t)?esc(pl[0]||''):(k.k==='g'||k.k==='m'||k.k==='s'?esc(nm.replace(/<[^>]+>/g,'')):esc(nm))}${k.k==='g'?'</b>':''}${k.k==='g'&&pl[1]&&!/own|penalty/i.test(k.t)?` <span class="st">(ass. ${esc(pl[1])})</span>`:''}`;
+    return `<div class="tle"><div>${home?txt:''}</div><b>${esc(k.m)}</b><div class="a">${home?'':txt}</div></div>`};
+  let out=mk("▶ Início do jogo · 0'");
+  const first=ev.filter(k=>!ht||k.v<=ht.v),second=ev.filter(k=>ht&&k.v>ht.v);
+  out+=first.map(row).join('');
+  if(ht)out+=mk('⏸ Intervalo')+second.map(row).join('');
+  if(!ev.length)out+=`<div class="st" style="padding:8px 0">Sem eventos publicados${err?' (erro '+esc(err)+')':''}.</div>`;
+  out+=post?mk(`⏹ Fim do jogo · ${esc(h.score)} - ${esc(w.score)}`):live?mk('● '+esc(x.e.status.type.shortDetail)):'';
+  el.innerHTML=out;
 }
 function pitch(rs){
   let g=`<svg viewBox="0 0 100 150" style="width:100%;display:block"><rect width="100" height="150" fill="#1c6b45"/>${[0,1,2,3,4,5].map(i=>`<rect y="${i*25}" width="100" height="12.5" fill="#fff" opacity=".06"/>`).join('')}<g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width=".5"><rect x="3" y="3" width="94" height="144"/><line x1="3" y1="75" x2="97" y2="75"/><circle cx="50" cy="75" r="10"/><rect x="25" y="3" width="50" height="20"/><rect x="25" y="127" width="50" height="20"/><rect x="38" y="3" width="24" height="7"/><rect x="38" y="140" width="24" height="7"/></g>`;
@@ -667,12 +706,19 @@ document.addEventListener('click',async e=>{
     const T=async(n,u)=>{try{const r=await fetch(u);let x='';if(r.ok){const tx=await r.text();x=tx.length+' bytes';try{const d=JSON.parse(tx);if(d.events)x+=', '+d.events.length+' jogos';else if(Array.isArray(d))x+=', '+d.length+' entradas'}catch{x+=' (não é JSON)'}}return `${r.ok?'✅':'❌'} ${n}: ${r.status} ${x}`}catch(e){return `❌ ${n}: sem resposta (${e.message})`}};
     const q='?t='+Date.now(),rows=await Promise.all([T('data/por.1.json','data/por.1.json'+q),T('data/eng.1.json','data/eng.1.json'+q),T('data/fotos.json','data/fotos.json'+q),T('canais.json','canais.json'+q),T('ESPN scoreboard',ESPN+'site/v2/sports/soccer/por.1/scoreboard'),T('manifest.json','manifest.json'+q)]);
     o.innerHTML=rows.map(r=>`<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)">${esc(r)}</div>`).join('')+`<p>Endereço desta página: ${esc(location.href)}</p><p>Jogos em memória: ${MAP.size}. Base de dados ${STAT?'carregada':'não carregada'}.</p>`;return}
+  if(b=t.closest('[data-clr]')){
+    const all=b.dataset.clr==='all';
+    try{Object.keys(localStorage).filter(k=>k.startsWith('fut')&&(all||k!=='fut')).forEach(k=>localStorage.removeItem(k))}catch{}
+    try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch{}
+    MAP.clear();CACHE={};if(all){S={...DEF};theme()}
+    toast('Dados limpos');load(true);render();return}
   if(t.closest('#rs')){S={...DEF};save();theme();render();return}
   if(b=t.closest('[data-cv]')){const i=$('#lbi'),u=b.dataset.cv.split('|');i.classList.remove('z');i.dataset.u=b.dataset.cv;i.dataset.i=0;i.referrerPolicy='no-referrer';i.onerror=()=>{const k=+i.dataset.i+1;i.dataset.i=k;if(k<u.length)i.src=u[k]};i.src=u[0];$('#lb').classList.add('on');return}
   if(b=t.closest('[data-d]')){calD=+b.dataset.d;render();return}
   if(b=t.closest('[data-lg]')){liga=b.dataset.lg?L1(b.dataset.lg):null;lsub='j';render();top0();return}
   if(b=t.closest('[data-club]')){const [id,l,n]=b.dataset.club.split('|');openClub(id,l,n);return}
   if(b=t.closest('[data-id]')){openD(b.dataset.id);return}
+  if(b=t.closest('[data-mt]')){mtab(b.dataset.mt);return}
   if(t.closest('#tb')){showTab();return}
   if(t.closest('#lu')){lineups();return}
   if(b=t.closest('[data-vid]')){$('#vf').src='https://www.youtube-nocookie.com/embed/'+b.dataset.vid;return}
