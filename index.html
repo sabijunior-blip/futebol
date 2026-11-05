@@ -65,7 +65,7 @@ main{padding:12px 14px;max-width:640px;margin:auto}
 .board{background:#0b0f0d;border-color:#1f2b24;color:#e8efe9}
 .board .sc{font:800 24px ui-monospace,monospace;color:#5eea9a}
 .board .st{color:#ffb347}
-.ti{display:grid;grid-template-columns:42px 14px 1fr;gap:6px}
+.ti{display:grid;grid-template-columns:14px 1fr;gap:8px}
 .ti .h{font-size:13px;color:var(--mute);padding-top:12px}
 .ti .d{position:relative}
 .ti .d:before{content:"";position:absolute;left:6px;top:0;bottom:-8px;width:1px;background:var(--line)}
@@ -204,9 +204,6 @@ nav button{padding:6px 0 3px;font-size:10px;gap:1px;letter-spacing:0}
 nav svg{width:22px;height:22px}
 nav button.on svg{filter:drop-shadow(0 0 5px color-mix(in srgb,var(--acc) 55%,transparent))}
 /* nomes completos das equipas */
-.t span{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;overflow-wrap:anywhere}
-.ctr .t:first-child{text-align:right}
-td.n{white-space:normal;max-width:none}
 .tmk{text-align:center;color:var(--mute);font-size:12px;padding:9px 0;border-bottom:1px solid var(--line);font-weight:600}
 </style>
 </head>
@@ -386,7 +383,7 @@ const grouped=(ev,style,nd)=>{let out='',cur='',cl='';
 const timeline=(ev,style)=>{let out='',cur='';
   for(const x of ev){const d=new Date(x.e.date),k=d.toDateString();
     if(k!==cur){cur=k;out+=`<div class="day">${esc(dayLbl(d))}</div>`}
-    out+=`<div class="ti ${isLive(x)?'lv':''}"><div class="h">${isLive(x)?'<b style="color:var(--live)">Direto</b>':hm(d)}</div><div class="d"></div><div><div class="st" style="margin:0 0 3px;display:flex;align-items:center">${LGI(x.l)}${esc(x.l.name)}</div>${card(x,style==='big'||style==='board'?'row':style)}</div></div>`}return out};
+    out+=`<div class="ti ${isLive(x)?'lv':''}"><div class="d"></div><div><div class="st" style="margin:0 0 3px;display:flex;align-items:center">${LGI(x.l)}${esc(x.l.name)}</div>${card(x,style==='big'||style==='board'?'row':style)}</div></div>`}return out};
 const sty=()=>LAY[S.lay]?.c||'center';
 
 /* ===== início ===== */
@@ -459,6 +456,18 @@ function cal(){
 }
 /* ===== notícias e capas ===== */
 async function noticias(){
+  let db=null;
+  try{db=await j('data/noticias.json?t='+Math.floor(Date.now()/9e5));try{localStorage.setItem('fut_n',JSON.stringify(db))}catch{}}
+  catch{try{db=JSON.parse(localStorage.getItem('fut_n')||'null')}catch{}}
+  if(!db||!(db.items||[]).length)return noticiasGoogle();
+  const L=lg==='all'?null:L1(lg),cut=Date.now()-15*864e5;
+  const list=db.items.filter(i=>new Date(i.d)>=cut&&(!L||(i.g||[]).includes(L.id))).sort((a,b)=>new Date(b.d)-new Date(a.d)).slice(0,60);
+  const head=`<div class="lg">${L?LGI(L)+esc(L.name):'Todas as competições'}<span class="st" style="margin-left:auto;font-weight:400">Atualizado ${hm(new Date(db.t))}</span></div>`;
+  if(!list.length)return head+'<p class="msg">Sem notícias desta competição nos últimos 15 dias.</p>';
+  const ago=d=>{const m=Math.round((Date.now()-new Date(d))/6e4);return m<60?`há ${Math.max(1,m)} min`:m<1440?`há ${Math.round(m/60)} h`:`há ${Math.round(m/1440)} d`};
+  return head+list.map(i=>`<a class="news" href="${esc(i.u)}" target="_blank" rel="noopener">${i.i?`<img src="${esc(i.i)}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="this.remove()">`:`<span class="ph">${L?LGI(L):''}</span>`}<div><b>${esc(i.t)}</b><small>${esc(i.s)} · ${ago(i.d)}</small></div></a>`).join('');
+}
+async function noticiasGoogle(){
   const L=lg==='all'?LEAGUES[0]:L1(lg),items=[],cut=new Date(Date.now()-15*864e5);
   try{const q=`(${L.q}) (${SITES.map(x=>'site:'+x).join(' OR ')}) when:15d`;
     const d=await j('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(`https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=pt-PT&gl=PT&ceid=PT:pt-150`));
