@@ -93,6 +93,7 @@ tr[data-club]{cursor:pointer}
 .news div{padding:10px 10px 10px 12px}
 .news b{display:block;font-size:15px;line-height:1.3}
 .news small{color:var(--mute);font-size:12px}
+.ph b{font-size:20px;color:var(--mute);font-weight:800}
 .ph{width:96px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--line)}
 .ph .ll{width:40px;height:40px;margin:0}
 .hint{color:var(--mute);font-size:13px;margin:0 0 8px}
@@ -138,6 +139,8 @@ tr[data-club]{cursor:pointer}
 .yt iframe,.yt #ytp{position:absolute;inset:0;width:100%!important;height:100%!important;border:0}
 .ytb{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center;background:var(--card);color:var(--ink);font-size:14px;line-height:1.35}
 .ytbtn{display:inline-block;text-decoration:none;padding:10px 20px;background:var(--acc);color:var(--onacc);border-radius:99px;font-weight:700;font-size:14px}
+.flash{animation:fl 1.5s ease-out}
+@keyframes fl{0%{background:color-mix(in srgb,var(--acc) 38%,var(--card))}100%{background:var(--card)}}
 .vc button.on{border-color:var(--acc);color:var(--acc)}
 .vc button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 10px;font:600 12px system-ui}
 .tle{display:grid;grid-template-columns:1fr 44px 1fr;align-items:center;gap:6px;padding:6px 0;font-size:14px;border-bottom:1px solid var(--line)}
@@ -352,7 +355,7 @@ async function loadStatic(){
   if(ok)STAT=true;
 }
 async function load(first){
-  const re=()=>{if(['inicio','cal'].includes(tab)||liga)render()};
+  const re=()=>{if(['inicio','cal'].includes(tab)||liga){const g=dsig();if(g!==LDS){LDS=g;render()}}};
   if(first||tick%10===0){await loadStatic();if(MAP.size){loaded=true;re()}}
   if(first||tick%30===0){await loadFavs();if(MAP.size){loaded=true;re()}}
   const td=new Date().toDateString(),all=evs();
@@ -470,7 +473,7 @@ async function noticias(){
   const head=`<div class="lg">${L?LGI(L)+esc(L.name):'Todas as competições'}<span class="st" style="margin-left:auto;font-weight:400">Atualizado ${hm(new Date(db.t))}</span></div>`;
   if(!list.length)return head+'<p class="msg">Sem notícias desta competição nos últimos 15 dias.</p>';
   const ago=d=>{const m=Math.round((Date.now()-new Date(d))/6e4);return m<60?`há ${Math.max(1,m)} min`:m<1440?`há ${Math.round(m/60)} h`:`há ${Math.round(m/1440)} d`};
-  return head+list.map(i=>`<a class="news" href="${esc(i.u)}" target="_blank" rel="noopener">${i.i?`<img src="${esc(i.i)}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="this.remove()">`:`<span class="ph">${L?LGI(L):''}</span>`}<div><b>${esc(i.t)}</b><small>${esc(i.s)} · ${ago(i.d)}</small></div></a>`).join('');
+  return head+list.map(i=>`<a class="news" href="${esc(i.u)}" target="_blank" rel="noopener">${i.i?`<img src="${esc(i.i)}" referrerpolicy="no-referrer" alt="" loading="lazy" onerror="this.remove()">`:`<span class="ph"><b>${esc(String(i.s).split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase())}</b></span>`}<div><b>${esc(i.t)}</b><small>${esc(i.s)} · ${ago(i.d)}</small></div></a>`).join('');
 }
 async function noticiasGoogle(){
   const L=lg==='all'?LEAGUES[0]:L1(lg),items=[],cut=new Date(Date.now()-15*864e5);
@@ -619,6 +622,15 @@ async function tline(x,fresh){
   out+=post?mk(`⏹ Fim do jogo · ${esc(h.score)} - ${esc(w.score)}`):live?mk('● '+esc(x.e.status.type.shortDetail)):'';
   el.innerHTML=out;
 }
+const depthOf=a=>{a=String(a||'').toUpperCase();
+  if(!a)return null;
+  if(/^G/.test(a))return 0;
+  if(/^(CD|CB|SW|LCB|RCB|D)/.test(a)||/^(LB|RB|LWB|RWB|WB)$/.test(a))return 1;
+  if(/^DM|^CDM/.test(a))return 2;
+  if(/^AM|^CAM|^LAM|^RAM/.test(a))return 4;
+  if(/^(LW|RW|LF|RF|W)$/.test(a)||/^(F|CF|ST|SS|LS|RS|FW)/.test(a))return 5;
+  if(/^(CM|M|LM|RM|LCM|RCM)/.test(a))return 3;
+  return null};
 const sideKey=a=>{a=String(a||'').toUpperCase();return /^L[A-Z]{0,2}$|-L$/.test(a)?0:/^R[A-Z]{0,2}$|-R$/.test(a)?2:1};
 const lastName=p=>{const full=String(p.athlete?.displayName||p.athlete?.shortName||'').trim().split(/\s+/);let n=full.pop()||'';if(/^(jr\.?|junior|filho|sr\.?)$/i.test(n)&&full.length)n=full.pop();return n.length>10?n.slice(0,9)+'…':n};
 function pitch(rs){
@@ -629,7 +641,9 @@ function pitch(rs){
     const lum=(parseInt(hx.slice(0,2),16)*299+parseInt(hx.slice(2,4),16)*587+parseInt(hx.slice(4,6),16)*114)/1000,tc=lum>170?'#111':'#fff';
     const st=(r.roster||[]).filter(p=>p.starter).sort((a,b)=>(a.formationPlace||99)-(b.formationPlace||99));
     const fm=(r.formation||'').split('-').map(Number).filter(Boolean);let rows=[];
-    if(fm.length&&fm.reduce((a,b)=>a+b,0)===st.length-1){rows=[[st[0]]];let i=1;fm.forEach(n=>{rows.push(st.slice(i,i+n));i+=n})}else rows=[st.slice(0,1),st.slice(1,5),st.slice(5,9),st.slice(9)];
+    const dp=st.map(p=>depthOf(p.position?.abbreviation));
+    if(st.length===11&&dp.every(d=>d!==null)&&dp.filter(d=>d===0).length===1){const lv=[...new Set(dp)].sort((a,b)=>a-b);rows=lv.map(l=>st.filter((p,i)=>dp[i]===l))}
+    else if(fm.length&&fm.reduce((a,b)=>a+b,0)===st.length-1){rows=[[st[0]]];let i=1;fm.forEach(n=>{rows.push(st.slice(i,i+n));i+=n})}else rows=[st.slice(0,1),st.slice(1,5),st.slice(5,9),st.slice(9)];
     rows.forEach((rw,idx)=>{
       rw=rw.filter(Boolean).sort((a,b)=>sideKey(a.position?.abbreviation)-sideKey(b.position?.abbreviation)||(a.formationPlace||0)-(b.formationPlace||0));
       const nl=rows.length-1,yh=idx===0?167:(nl>1?143-(idx-1)*(39/(nl-1)):125),y=home?yh:H-yh;
@@ -650,9 +664,22 @@ async function lineups(){
   try{const d=await getSum(x),rs=(d.rosters||[]).filter(r=>(r.roster||[]).length);
     if(!rs.length){el.innerHTML='<p class="msg">As constituições ainda não foram divulgadas.</p>';return}
     const A=rs.find(r=>r.homeAway==='away'),H=rs.find(r=>r.homeAway==='home'),sub=r=>(r.roster||[]).filter(p=>!p.starter).map(p=>esc(p.athlete?.shortName||p.athlete?.displayName)).join(', ');
-    el.innerHTML=`<div class="box"><div style="font-weight:700;margin-bottom:6px">${esc(A?.team?.displayName||'')} · ${esc(A?.formation||'')}</div><div class="pitch">${pitch(rs)}</div><div style="font-weight:700;margin-top:6px">${esc(H?.team?.displayName||'')} · ${esc(H?.formation||'')}</div>${rs.map(r=>sub(r)?`<div class="st" style="margin-top:8px"><b>${esc(r.team?.displayName||'')}</b> · suplentes: ${sub(r)}</div>`:'').join('')}</div>`;
+    el.innerHTML=`<div class="box"><div style="font-weight:700;margin-bottom:6px">${esc(A?.team?.displayName||'')} · ${esc(A?.formation||'')}</div><div class="pitch">${pitch(rs)}</div><div class="st" style="margin-top:6px">Posições recebidas: ${rs.map(r=>(r.roster||[]).filter(p=>p.starter).map(p=>p.position?.abbreviation||'?').join(' ')).join(' | ')}</div><div style="font-weight:700;margin-top:6px">${esc(H?.team?.displayName||'')} · ${esc(H?.formation||'')}</div>${rs.map(r=>sub(r)?`<div class="st" style="margin-top:8px"><b>${esc(r.team?.displayName||'')}</b> · suplentes: ${sub(r)}</div>`:'').join('')}</div>`;
   }catch{el.innerHTML='<p class="msg">Não foi possível carregar as constituições.</p>'}
 }
+// Canais aceites por competição (edita aqui). Só aparecem vídeos destes canais.
+const CAN_VID={
+ 'por.1':/vsport|sport ?tv|liga portugal|canal 11|dazn/i,'por.2':/liga portugal|sport ?tv|canal 11/i,
+ 'por.taca.portugal':/sport ?tv|rtp|vsport|dazn|federa/i,'por.league_cup':/liga portugal|sport ?tv|vsport/i,
+ 'uefa.champions':/uefa|sport ?tv|dazn/i,'uefa.europa':/uefa|dazn|sport ?tv/i,'uefa.europa.conf':/uefa|dazn/i,
+ 'eng.1':/premier league|dazn|sky sports|sport ?tv/i,'eng.2':/efl|championship|sky sports|sky bet|sport ?tv/i,
+ 'eng.fa':/the fa|emirates fa|bbc|itv|dazn/i,'eng.league_cup':/efl|sky sports|carabao/i,
+ 'esp.1':/laliga|la liga|dazn/i,'esp.copa_del_rey':/rfef|dazn|laliga|rtve|copa del rey/i,
+ 'ita.1':/serie a|dazn|sport ?tv/i,'ita.coppa_italia':/serie a|coppa italia|dazn|mediaset/i,
+ 'ger.1':/bundesliga|dazn/i,'ger.dfb_pokal':/dfb|bundesliga|dazn|sportschau/i,
+ 'fra.1':/ligue 1|dazn|bein/i,'fra.coupe_de_france':/coupe de france|france tv|ligue 1|dazn/i};
+const VID_NO=/fifa|ea ?fc|efootball|\bpes\b|fc ?2\d|gameplay|reaction|reação|\breact|an[áa]lise|coment[áa]rio|podcast|ao vivo|\blive\b|stream|previs[ãa]o|preview|pr[ée]-jogo|confer[êe]ncia|entrevista|bastidores|talk|debate|opini[ãa]o/i;
+const isoSec=d=>{const m=String(d||'').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);return m?(+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0):0};
 let VL=[],YTP=null,YTA=null;
 const ytLink=id=>`https://www.youtube.com/watch?v=${id}`;
 function ytApi(){
@@ -693,18 +720,18 @@ async function vid(x){
   const draw=list=>{VL=list;const first=list.find(v=>v.e!==false)||list[0];
     el.innerHTML=`<div class="yt" id="ytw"></div><div id="ytm"></div><div class="vc">${list.map(i=>`<button data-vid="${i.v}">${i.e===false?'🔒 ':''}${esc(i.c)}</button>`).join('')}</div><div style="margin-top:8px">${ext}</div>`;
     playVid(first.v)};
-  try{const c=JSON.parse(localStorage.getItem('fut_v'+x.e.id)||'null');if(c&&c.length&&c[0].e!==undefined){draw(c);return}}catch{}
+  try{const c=JSON.parse(localStorage.getItem('fut_w'+x.e.id)||'null');if(c&&c.length){draw(c);return}}catch{}
   if(!KEY){el.innerHTML=`<div class="st" style="margin-bottom:6px">Para ver o vídeo aqui dentro, junta a chave da YouTube Data API em Definições → Resumos em vídeo.</div>${ext}`;return}
-  try{const d=await j(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=12&regionCode=PT&relevanceLanguage=pt&publishedAfter=${encodeURIComponent(new Date(x.e.date).toISOString())}&q=${qs}&key=${encodeURIComponent(KEY)}`);
-    const it=(d.items||[]).filter(i=>i.id?.videoId);
+  try{const pt=/^por\./.test(x.l.id),ok=CAN_VID[x.l.id]||/dazn|uefa|sport ?tv|vsport/i;
+    const d=await j(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=17&maxResults=15&regionCode=PT${pt?'&relevanceLanguage=pt':''}&publishedAfter=${encodeURIComponent(new Date(x.e.date).toISOString())}&q=${encodeURIComponent(h.team.displayName+' '+w.team.displayName+' resumo|highlights')}&key=${encodeURIComponent(KEY)}`);
+    const it=(d.items||[]).filter(i=>i.id?.videoId&&ok.test(i.snippet.channelTitle)&&!VID_NO.test(i.snippet.title));
     if(!$('#vid'))return;
-    if(!it.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo publicado.</div>${ext}`;return}
-    const pref=/vsport|sport tv|sporttv|dazn|liga portugal|laliga|bundesliga|premier league|serie a|ligue 1|canal 11|uefa/i;
-    it.sort((a,b)=>pref.test(b.snippet.channelTitle)-pref.test(a.snippet.channelTitle));
-    const top=it.slice(0,6),emb={};
-    try{const v=await j(`https://www.googleapis.com/youtube/v3/videos?part=status&id=${top.map(i=>i.id.videoId).join(',')}&key=${encodeURIComponent(KEY)}`);(v.items||[]).forEach(i=>{emb[i.id]=i.status?.embeddable!==false})}catch{}
-    const list=top.map(i=>({v:i.id.videoId,c:i.snippet.channelTitle,e:emb[i.id.videoId]!==false}));
-    try{localStorage.setItem('fut_v'+x.e.id,JSON.stringify(list))}catch{}
+    if(!it.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo de um canal oficial para este jogo.</div>${ext}`;return}
+    const top=it.slice(0,6),emb={},dur={};
+    try{const v=await j(`https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=${top.map(i=>i.id.videoId).join(',')}&key=${encodeURIComponent(KEY)}`);(v.items||[]).forEach(i=>{emb[i.id]=i.status?.embeddable!==false;if(i.contentDetails?.duration)dur[i.id]=isoSec(i.contentDetails.duration)})}catch{}
+    const list=top.filter(i=>dur[i.id.videoId]===undefined||(dur[i.id.videoId]>=120&&dur[i.id.videoId]<=1800)).map(i=>({v:i.id.videoId,c:i.snippet.channelTitle,e:emb[i.id.videoId]!==false}));
+    if(!list.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo de um canal oficial para este jogo.</div>${ext}`;return}
+    try{localStorage.setItem('fut_w'+x.e.id,JSON.stringify(list))}catch{}
     if(!$('#vid'))return;
     draw(list);
   }catch{if($('#vid'))el.innerHTML=`<div class="st" style="margin-bottom:6px">Não foi possível obter o vídeo (verifica a chave da API).</div>${ext}`}
@@ -790,7 +817,24 @@ function updateHead(){
   const [h,w]=cp(x),pre=state(x)==='pre';
   $('#dtm').innerHTML=`${pre?hm(new Date(x.e.date)):esc(h.score)+' - '+esc(w.score)}<div class="st ${isLive(x)?'live':''}">${esc(pre?dayLbl(new Date(x.e.date)):stTxt(x))}</div>`;
 }
-let LSIG='',BUSY=false;
+function flash(el){if(el.classList.contains('hero'))return;el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1500)}
+function patchLive(){
+  evs().filter(isLive).forEach(x=>{
+    const [h,w]=cp(x);
+    document.querySelectorAll(`[data-id="${x.e.id}"]`).forEach(el=>{
+      const set=(n,t)=>{if(n&&n.textContent!==t){n.textContent=t;return true}return false};
+      if(el.classList.contains('hero')){set(el.querySelector('.g b'),`${h.score} - ${w.score}`);return}
+      let c=false;
+      if(el.classList.contains('big'))c=set(el.querySelector('.mid'),`${h.score} : ${w.score}`);
+      else if(el.querySelector('.ctr'))c=set(el.querySelector('.ctr .sc'),`${h.score} - ${w.score}`);
+      else{const q=el.querySelectorAll('.row .sc');c=set(q[0],h.score);c=set(q[1],w.score)||c}
+      set(el.querySelector('.st'),stTxt(x));
+      if(c)flash(el);
+    });
+  });
+}
+const dsig=()=>{let h=0;const a=evs();for(const x of a){const c=cp(x),s=x.e.id+state(x)+c[0].score+c[1].score;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0}return a.length+':'+h};
+let LDS='',LSTS=null,BUSY=false;
 async function liveTick(){
   if(document.hidden||!loaded||BUSY)return;
   BUSY=true;
@@ -800,8 +844,9 @@ async function liveTick(){
     if(!live.length)return;
     const ids=[...new Set(live.map(x=>x.l.id))],offs=live.some(x=>new Date(x.e.date).toDateString()!==td)?[-1,0]:[0];
     await pullDays(offs,ids);
-    const sig=evs().filter(isLive).map(x=>x.e.id+':'+cp(x).map(y=>y.score).join('-')+':'+x.e.status.type.shortDetail).join('|');
-    if(sig!==LSIG){LSIG=sig;if((tab==='inicio'||tab==='cal')&&!document.querySelector('#sheet.on'))render();checkAlerts()}
+    const near=evs().filter(x=>Math.abs(new Date(x.e.date)-now)<6*36e5),sts=near.map(x=>x.e.id+state(x)).join();
+    if(LSTS!==null&&sts!==LSTS&&(tab==='inicio'||tab==='cal')&&!document.querySelector('#sheet.on'))render();else patchLive();
+    LSTS=sts;LDS=dsig();checkAlerts();
     updateHead();
   }finally{BUSY=false}
 }
