@@ -25,6 +25,10 @@ KW = {
     "por.taca.portugal": ["taça de portugal"], "por.league_cup": ["taça da liga"],
     "uefa.champions": ["liga dos campeões", "champions league", "champions"], "uefa.europa": ["liga europa", "europa league"],
     "uefa.europa.conf": ["liga conferência", "conference league"],
+    "uefa.nations": ["liga das nações", "nations league", "seleção nacional", "seleção portuguesa"],
+    "fifa.world": ["campeonato do mundo", "mundial", "world cup", "copa do mundo"],
+    "uefa.euro": ["campeonato da europa", "euro 2028", "europeu de futebol"],
+    "fifa.worldq.uefa": ["qualificação para o mundial", "qualificação mundial", "apuramento para o mundial"],
     "eng.1": ["premier league", "manchester", "liverpool", "arsenal", "chelsea", "tottenham", "newcastle", "aston villa"],
     "eng.2": ["championship"], "eng.fa": ["fa cup"], "eng.league_cup": ["carabao", "taça da liga inglesa"],
     "esp.1": ["la liga", "laliga", "real madrid", "barcelona", "atlético de madrid", "sevilha", "villarreal"], "esp.copa_del_rey": ["copa del rey", "taça do rei"],
@@ -33,7 +37,7 @@ KW = {
     "fra.1": ["ligue 1", "psg", "paris saint-germain", "marselha", "mónaco"], "fra.coupe_de_france": ["taça de frança", "coupe de france"],
 }
 GN = [("por.1", 'Benfica OR Sporting OR "FC Porto" OR "Liga Portugal"'), ("uefa.champions", '"Liga dos Campeões"'),
-      ("uefa.europa", '"Liga Europa"'), ("eng.1", '"Premier League"'), ("eng.2", "Championship"), ("esp.1", '"La Liga"'),
+      ("uefa.europa", '"Liga Europa"'), ("uefa.nations", '"Liga das Nações"'), ("fifa.world", '"Campeonato do Mundo" OR Mundial'), ("uefa.euro", '"Campeonato da Europa"'), ("eng.1", '"Premier League"'), ("eng.2", "Championship"), ("esp.1", '"La Liga"'),
       ("ita.1", '"Serie A"'), ("ger.1", "Bundesliga"), ("fra.1", '"Ligue 1"'), ("por.taca.portugal", '"Taça de Portugal"')]
 SITES = " OR ".join("site:" + d for d in ["abola.pt", "record.pt", "ojogo.pt", "maisfutebol.iol.pt", "zerozero.pt", "rtp.pt", "observador.pt", "publico.pt", "noticiasaominuto.com", "cnnportugal.iol.pt", "sapo.pt"])
 NOW = datetime.datetime.now(datetime.timezone.utc)
@@ -164,7 +168,7 @@ def gnews(item):
 
 SPORTS_SRC = {"A Bola", "Record", "O Jogo", "Maisfutebol", "zerozero", "Bola na Rede", "SAPO Desporto"}
 # palavras só de futebol (anulam a exclusão de outras modalidades)
-HARD = re.compile(r"(?<![a-z0-9])(futebol|futebolist\w*|golos?|guarda-redes|avancado\w*|penalti\w*|fora de jogo|livre direto|canto|dérbi|derbi|liga dos campeoes|champions|premier league|la liga|serie a|bundesliga|ligue 1|primeira liga|liga portugal|taca de portugal)(?![a-z0-9])")
+HARD = re.compile(r"(?<![a-z0-9])(futebol|futebolist\w*|golos?|guarda-redes|avancado\w*|penalti\w*|fora de jogo|livre direto|canto|dérbi|derbi|liga dos campeoes|liga das nacoes|campeonato do mundo|campeonato da europa|selecao nacional|selecao portuguesa|mundial|champions|premier league|la liga|serie a|bundesliga|ligue 1|primeira liga|liga portugal|taca de portugal)(?![a-z0-9])")
 # palavras gerais de desporto (aceites só em jornais desportivos)
 STRONG = re.compile(r"(?<![a-z0-9])(treinador\w*|medio\w*|defesa\w*|arbitr\w*|var|fifa|uefa|jornada|transferenc\w*|estadio\w*|empat\w*|derrota\w*|vitoria\w*|liga|taca|campeonato|selecao|clube\w*|equipa\w*|jogador\w*|mercado|onze|convocad\w*)(?![a-z0-9])")
 OTHER = re.compile(r"(?<![a-z0-9])(basquetebol|basquete|nba|andebol|voleibol|hoquei|tenis|formula 1|f1|motogp|ciclismo|volta a portugal|rali|rugby|ragui|natacao|atletismo|surf|judo|golfe|padel|futsal|esports?|poker|boxe|mma|ufc)(?![a-z0-9])")

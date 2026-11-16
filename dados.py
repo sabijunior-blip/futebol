@@ -5,7 +5,7 @@ a época inteira. É retomável: se parar a meio, continua na execução seguint
 import json, os, time, datetime, urllib.request, urllib.error
 from concurrent.futures import ThreadPoolExecutor
 
-LEAGUES = ["por.1","por.2","por.taca.portugal","por.league_cup","uefa.champions","uefa.europa","uefa.europa.conf",
+LEAGUES = ["por.1","por.2","por.taca.portugal","por.league_cup","uefa.champions","uefa.europa","uefa.europa.conf","uefa.nations","fifa.world","uefa.euro","fifa.worldq.uefa",
  "eng.1","eng.2","eng.fa","eng.league_cup","esp.1","esp.copa_del_rey","ita.1","ita.coppa_italia",
  "ger.1","ger.dfb_pokal","fra.1","fra.coupe_de_france"]
 ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/"

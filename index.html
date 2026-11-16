@@ -239,6 +239,10 @@ const LEAGUES=[
  {id:'uefa.champions',lg:2,name:'Liga dos Campeões',q:'Liga dos Campeões'},
  {id:'uefa.europa',lg:2310,name:'Liga Europa',q:'Liga Europa'},
  {id:'uefa.europa.conf',lg:20296,name:'Liga Conferência',q:'Liga Conferência'},
+ {id:'uefa.nations',name:'Liga das Nações',q:'Liga das Nações'},
+ {id:'fifa.world',name:'Campeonato do Mundo',q:'Campeonato do Mundo'},
+ {id:'uefa.euro',name:'Campeonato da Europa',q:'Campeonato da Europa'},
+ {id:'fifa.worldq.uefa',name:'Qualificação Mundial (Europa)',q:'Qualificação Mundial'},
  {id:'eng.1',lg:23,name:'Premier League',q:'Premier League'},
  {id:'eng.2',lg:24,name:'Championship',q:'EFL Championship'},
  {id:'eng.fa',name:'FA Cup',q:'FA Cup'},
@@ -277,7 +281,7 @@ let S={...DEF};try{S={...DEF,...JSON.parse(localStorage.getItem('fut')||'{}')}}c
 const save=()=>{try{localStorage.setItem('fut',JSON.stringify(S))}catch{}};
 let CFG={},tab='inicio',lg='all',ss='',addLg='',nsub='c',liga=null,lsub='j',calD=0,CACHE={};
 const MAP=new Map();let loaded=false,badAll=false;
-const INI={'uefa.champions':'LC','uefa.europa':'LE','uefa.europa.conf':'LCf','por.taca.portugal':'TP','por.league_cup':'TL','por.2':'L2','eng.fa':'FA','eng.league_cup':'EFL','esp.copa_del_rey':'CR','ita.coppa_italia':'CI','ger.dfb_pokal':'DFB','fra.coupe_de_france':'CF'};
+const INI={'uefa.nations':'LN','fifa.world':'CM','uefa.euro':'CE','fifa.worldq.uefa':'QM','uefa.champions':'LC','uefa.europa':'LE','uefa.europa.conf':'LCf','por.taca.portugal':'TP','por.league_cup':'TL','por.2':'L2','eng.fa':'FA','eng.league_cup':'EFL','esp.copa_del_rey':'CR','ita.coppa_italia':'CI','ger.dfb_pokal':'DFB','fra.coupe_de_france':'CF'};
 const LGI=l=>`<span class="lb"><b>${esc(INI[l.id]||l.name.split(' ').map(w=>w[0]).join('').slice(0,3))}</b>${l.lg?`<img src="https://a.espncdn.com/i/leaguelogos/soccer/500/${l.lg}.png" alt="" onerror="this.remove()">`:''}</span>`;
 const hm=d=>d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
 const dayLbl=d=>d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
@@ -364,7 +368,7 @@ async function load(first){
   const offs=all.some(x=>isLive(x)&&new Date(x.e.date).toDateString()!==td)?[-1,0]:[0];
   if(!STAT||ids.length)badAll=await pullDays(offs,ids);
   loaded=true;checkAlerts();re();
-  if(!STAT&&(first||tick%20===0)){const ids=[...new Set([...S.favs.map(f=>f.lg||'por.1'),'por.1','uefa.champions','uefa.europa'])];await pullDays([1,2,3,4,5,6,-1,-2,-3],ids);re()}
+  if(!STAT&&(first||tick%20===0)){const ids=[...new Set([...S.favs.map(f=>f.lg||'por.1'),'por.1','uefa.champions','uefa.europa','uefa.nations'])];await pullDays([1,2,3,4,5,6,-1,-2,-3],ids);re()}
   persist();tick++;
 }
 const cp=x=>{const c=x.e.competitions[0].competitors;return[c.find(y=>y.homeAway==='home')||c[0],c.find(y=>y.homeAway==='away')||c[1]]};
@@ -397,9 +401,10 @@ const sty=()=>LAY[S.lay]?.c||'center';
 /* ===== início ===== */
 async function standings(id){
   if(CACHE['st'+id])return CACHE['st'+id];
-  const d=await j(`${ESPN}v2/sports/soccer/${id}/standings`),en=(d.children?.[0]?.standings?.entries)||[];
+  const d=await j(`${ESPN}v2/sports/soccer/${id}/standings`),ch=d.children||[];
   const g=(x,n)=>x.stats.find(s=>s.name===n)?.value??'';
-  return CACHE['st'+id]=en.map(x=>({id:x.team.id,lo:x.team.logos?.[0]?.href||'',n:x.team.displayName,r:g(x,'rank'),j:g(x,'gamesPlayed'),v:g(x,'wins'),e:g(x,'ties'),d:g(x,'losses'),sg:g(x,'pointDifferential'),p:g(x,'points')})).sort((a,b)=>a.r-b.r);
+  const rows=ch.flatMap(c=>(c.standings?.entries||[]).map(x=>({gr:ch.length>1?(c.name||c.abbreviation||''):'',id:x.team.id,lo:x.team.logos?.[0]?.href||'',n:x.team.displayName,r:g(x,'rank'),j:g(x,'gamesPlayed'),v:g(x,'wins'),e:g(x,'ties'),d:g(x,'losses'),sg:g(x,'pointDifferential'),p:g(x,'points')})));
+  return CACHE['st'+id]=rows.sort((a,b)=>String(a.gr).localeCompare(String(b.gr))||a.r-b.r);
 }
 function diaCard(up){
   const f=S.favs[0];if(!f)return '';
@@ -437,7 +442,9 @@ async function ligaView(){
 }
 async function tabela(l){
   try{const rows=await standings(l.id);if(!rows.length)throw 0;
-    return `<table><tr><th>#</th><th style="text-align:left">Equipa</th><th>J</th><th>V</th><th>E</th><th>D</th><th>DG</th><th>Pts</th></tr>${rows.map(r=>`<tr data-club="${r.id}|${l.id}|${esc(r.n)}"><td>${r.r}</td><td class="n"><div class="t"><img src="${esc(r.lo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(r.n)}</span></div></td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.sg}</td><td class="p">${r.p}</td></tr>`).join('')}</table>`}
+    const tb=rs=>`<table><tr><th>#</th><th style="text-align:left">Equipa</th><th>J</th><th>V</th><th>E</th><th>D</th><th>DG</th><th>Pts</th></tr>${rs.map(r=>`<tr data-club="${r.id}|${l.id}|${esc(r.n)}"><td>${r.r}</td><td class="n"><div class="t"><img src="${esc(r.lo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(r.n)}</span></div></td><td>${r.j}</td><td>${r.v}</td><td>${r.e}</td><td>${r.d}</td><td>${r.sg}</td><td class="p">${r.p}</td></tr>`).join('')}</table>`;
+    const gs=[...new Set(rows.map(r=>r.gr))];
+    return gs.length>1||gs[0]?gs.map(gn=>`<div class="sub" style="margin-top:14px">${esc(gn)}</div>`+tb(rows.filter(r=>r.gr===gn))).join(''):tb(rows)}
   catch{return '<p class="msg">Esta competição não tem classificação disponível.</p>'}
 }
 async function marcadores(l){
@@ -668,16 +675,17 @@ async function lineups(){
   }catch{el.innerHTML='<p class="msg">Não foi possível carregar as constituições.</p>'}
 }
 // Canais aceites por competição (edita aqui). Só aparecem vídeos destes canais.
-const CAN_VID={
- 'por.1':/vsport|sport ?tv|liga portugal|canal 11|dazn/i,'por.2':/liga portugal|sport ?tv|canal 11/i,
- 'por.taca.portugal':/sport ?tv|rtp|vsport|dazn|federa/i,'por.league_cup':/liga portugal|sport ?tv|vsport/i,
- 'uefa.champions':/uefa|sport ?tv|dazn/i,'uefa.europa':/uefa|dazn|sport ?tv/i,'uefa.europa.conf':/uefa|dazn/i,
- 'eng.1':/premier league|dazn|sky sports|sport ?tv/i,'eng.2':/efl|championship|sky sports|sky bet|sport ?tv/i,
- 'eng.fa':/the fa|emirates fa|bbc|itv|dazn/i,'eng.league_cup':/efl|sky sports|carabao/i,
- 'esp.1':/laliga|la liga|dazn/i,'esp.copa_del_rey':/rfef|dazn|laliga|rtve|copa del rey/i,
- 'ita.1':/serie a|dazn|sport ?tv/i,'ita.coppa_italia':/serie a|coppa italia|dazn|mediaset/i,
- 'ger.1':/bundesliga|dazn/i,'ger.dfb_pokal':/dfb|bundesliga|dazn|sportschau/i,
- 'fra.1':/ligue 1|dazn|bein/i,'fra.coupe_de_france':/coupe de france|france tv|ligue 1|dazn/i};
+const CAN_VID={ // por ordem de prioridade; só aparecem vídeos destes canais
+ 'por.1':[/vsport/i,/sport ?tv/i],'por.2':[/vsport/i,/liga portugal/i,/sport ?tv/i],
+ 'por.taca.portugal':[/sport ?tv/i,/vsport/i,/rtp/i],'por.league_cup':[/vsport/i,/liga portugal/i,/sport ?tv/i],
+ 'uefa.nations':[/uefa/i,/rtp/i,/sport ?tv/i],'fifa.world':[/fifa/i,/rtp/i,/sport ?tv/i],'uefa.euro':[/uefa/i,/rtp/i,/sport ?tv/i],'fifa.worldq.uefa':[/fifa/i,/uefa/i,/rtp/i,/sport ?tv/i],
+ 'uefa.champions':[/uefa/i,/dazn/i,/sport ?tv/i],'uefa.europa':[/uefa/i,/dazn/i,/sport ?tv/i],'uefa.europa.conf':[/uefa/i,/dazn/i],
+ 'eng.1':[/dazn ?portugal/i],'eng.2':[/\befl\b/i],
+ 'eng.fa':[/the fa|emirates fa/i,/dazn ?portugal/i],'eng.league_cup':[/\befl\b/i],
+ 'esp.1':[/dazn ?portugal/i],'esp.copa_del_rey':[/dazn ?portugal/i,/rfef/i],
+ 'ita.1':[/serie a/i],'ita.coppa_italia':[/serie a/i,/coppa italia/i],
+ 'ger.1':[/bundesliga/i,/dazn ?portugal/i],'ger.dfb_pokal':[/dfb/i,/bundesliga/i],
+ 'fra.1':[/ligue 1/i],'fra.coupe_de_france':[/coupe de france/i,/ligue 1/i]};
 const VID_NO=/fifa|ea ?fc|efootball|\bpes\b|fc ?2\d|gameplay|reaction|reação|\breact|an[áa]lise|coment[áa]rio|podcast|ao vivo|\blive\b|stream|previs[ãa]o|preview|pr[ée]-jogo|confer[êe]ncia|entrevista|bastidores|talk|debate|opini[ãa]o/i;
 const isoSec=d=>{const m=String(d||'').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);return m?(+m[1]||0)*3600+(+m[2]||0)*60+(+m[3]||0):0};
 let VL=[],YTP=null,YTA=null;
@@ -720,18 +728,18 @@ async function vid(x){
   const draw=list=>{VL=list;const first=list.find(v=>v.e!==false)||list[0];
     el.innerHTML=`<div class="yt" id="ytw"></div><div id="ytm"></div><div class="vc">${list.map(i=>`<button data-vid="${i.v}">${i.e===false?'🔒 ':''}${esc(i.c)}</button>`).join('')}</div><div style="margin-top:8px">${ext}</div>`;
     playVid(first.v)};
-  try{const c=JSON.parse(localStorage.getItem('fut_w'+x.e.id)||'null');if(c&&c.length){draw(c);return}}catch{}
+  try{const c=JSON.parse(localStorage.getItem('fut_x'+x.e.id)||'null');if(c&&c.length){draw(c);return}}catch{}
   if(!KEY){el.innerHTML=`<div class="st" style="margin-bottom:6px">Para ver o vídeo aqui dentro, junta a chave da YouTube Data API em Definições → Resumos em vídeo.</div>${ext}`;return}
-  try{const pt=/^por\./.test(x.l.id),ok=CAN_VID[x.l.id]||/dazn|uefa|sport ?tv|vsport/i;
+  try{const pt=/^por\./.test(x.l.id),pri=CAN_VID[x.l.id]||[/dazn/i,/uefa/i,/sport ?tv/i,/vsport/i],rank=t=>{const n=pri.findIndex(r=>r.test(t));return n<0?99:n};
     const d=await j(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=17&maxResults=15&regionCode=PT${pt?'&relevanceLanguage=pt':''}&publishedAfter=${encodeURIComponent(new Date(x.e.date).toISOString())}&q=${encodeURIComponent(h.team.displayName+' '+w.team.displayName+' resumo|highlights')}&key=${encodeURIComponent(KEY)}`);
-    const it=(d.items||[]).filter(i=>i.id?.videoId&&ok.test(i.snippet.channelTitle)&&!VID_NO.test(i.snippet.title));
+    const it=(d.items||[]).filter(i=>i.id?.videoId&&rank(i.snippet.channelTitle)<99&&!VID_NO.test(i.snippet.title)).sort((a,b)=>rank(a.snippet.channelTitle)-rank(b.snippet.channelTitle));
     if(!$('#vid'))return;
     if(!it.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo de um canal oficial para este jogo.</div>${ext}`;return}
     const top=it.slice(0,6),emb={},dur={};
     try{const v=await j(`https://www.googleapis.com/youtube/v3/videos?part=status,contentDetails&id=${top.map(i=>i.id.videoId).join(',')}&key=${encodeURIComponent(KEY)}`);(v.items||[]).forEach(i=>{emb[i.id]=i.status?.embeddable!==false;if(i.contentDetails?.duration)dur[i.id]=isoSec(i.contentDetails.duration)})}catch{}
     const list=top.filter(i=>dur[i.id.videoId]===undefined||(dur[i.id.videoId]>=120&&dur[i.id.videoId]<=1800)).map(i=>({v:i.id.videoId,c:i.snippet.channelTitle,e:emb[i.id.videoId]!==false}));
     if(!list.length){el.innerHTML=`<div class="st" style="margin-bottom:6px">Ainda não há resumo de um canal oficial para este jogo.</div>${ext}`;return}
-    try{localStorage.setItem('fut_w'+x.e.id,JSON.stringify(list))}catch{}
+    try{localStorage.setItem('fut_x'+x.e.id,JSON.stringify(list))}catch{}
     if(!$('#vid'))return;
     draw(list);
   }catch{if($('#vid'))el.innerHTML=`<div class="st" style="margin-bottom:6px">Não foi possível obter o vídeo (verifica a chave da API).</div>${ext}`}
