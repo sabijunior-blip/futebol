@@ -1,122 +1,478 @@
 [
  {
-  "s": "estrela-da-amadora-santa-clara-2026-11-03-liga-next-gen",
-  "d": "2026-11-03",
-  "c": [
-   "Canal 11"
-  ]
- },
- {
-  "s": "shakhtar-donetsk-sporting-2026-11-03-uefa-youth-league",
-  "d": "2026-11-03",
-  "c": [
-   "Sporting TV"
-  ]
- },
- {
-  "s": "man-united-u19-roma-u19-2026-11-03-uefa-youth-league",
-  "d": "2026-11-03",
-  "c": [
-   "DAZN"
-  ]
- },
- {
-  "s": "academico-de-viseu-torreense-2026-11-03-liga-next-gen",
-  "d": "2026-11-03",
-  "c": [
-   "Canal 11"
-  ]
- },
- {
-  "s": "atl-madrid-bayern-munchen-2026-11-03-uefa-youth-league",
-  "d": "2026-11-03",
+  "s": "sabah-barcelona-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
   "c": [
    "DAZN 1"
   ]
  },
  {
-  "s": "shakhtar-donetsk-sporting-2026-11-03-liga-dos-campeoes",
-  "d": "2026-11-03",
-  "c": [
-   "Sport TV 5"
-  ]
- },
- {
-  "s": "galatasaray-stuttgart-2026-11-03-uefa-champions-league",
-  "d": "2026-11-03",
-  "c": [
-   "DAZN 1"
-  ]
- },
- {
-  "s": "torreense-benfica-2026-11-03-camp-nacional-fem",
-  "d": "2026-11-03",
-  "c": [
-   "Canal 11",
-   "BTV"
-  ]
- },
- {
-  "s": "manchester-united-roma-2026-11-03-uefa-champions-league",
-  "d": "2026-11-03",
-  "c": [
-   "DAZN 1"
-  ]
- },
- {
-  "s": "barcelona-aston-villa-2026-11-03-uefa-champions-league",
-  "d": "2026-11-03",
+  "s": "slavia-praha-villarreal-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
   "c": [
    "DAZN 2"
   ]
  },
  {
-  "s": "villarreal-psg-2026-11-03-uefa-champions-league",
-  "d": "2026-11-03",
+  "s": "psg-roma-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "sporting-manchester-united-2026-11-25-liga-dos-campeoes",
+  "d": "2026-11-25",
+  "c": [
+   "Sport TV 5"
+  ]
+ },
+ {
+  "s": "club-brugge-liverpool-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "lille-bayern-munchen-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "inter-stuttgart-2026-11-25-uefa-champions-league",
+  "d": "2026-11-25",
   "c": [
    "DAZN 4"
   ]
  },
  {
-  "s": "west-bromwich-southampton-2026-11-03-efl-championship",
-  "d": "2026-11-03",
+  "s": "stoke-city-milwall-2026-11-25-efl-championship",
+  "d": "2026-11-25",
   "c": [
    "Sport TV 1"
   ]
  },
  {
-  "s": "atletico-madrid-bayern-munique-2026-11-03-liga-dos-campeoes",
-  "d": "2026-11-03",
+  "s": "atletico-madrid-viking-2026-11-25-liga-dos-campeoes",
+  "d": "2026-11-25",
   "c": [
    "DAZN"
   ]
  },
  {
-  "s": "bod-glimt-lille-2026-11-03-liga-dos-campeoes",
-  "d": "2026-11-03",
+  "s": "shakhtar-fenerbahce-2026-11-25-liga-dos-campeoes",
+  "d": "2026-11-25",
   "c": [
    "DAZN"
   ]
  },
  {
-  "s": "feyenoord-inter-de-milao-2026-11-03-liga-dos-campeoes",
-  "d": "2026-11-03",
+  "s": "maritimo-nacional-2026-11-27-primeira-liga",
+  "d": "2026-11-27",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "arouca-rio-ave-2026-11-28-primeira-liga",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "academico-alverca-2026-11-28-primeira-liga",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "vitoria-estrela-da-amadora-2026-11-28-primeira-liga",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "afs-leixoes-2026-11-28-liga-portugal-2",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "chaves-tondela-2026-11-28-liga-portugal-2",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV+"
+  ]
+ },
+ {
+  "s": "farense-uniao-de-leiria-2026-11-28-liga-portugal-2",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 4"
+  ]
+ },
+ {
+  "s": "lourosa-vizela-2026-11-28-liga-portugal-2",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV+"
+  ]
+ },
+ {
+  "s": "holstein-kiel-kaiserslautern-2026-11-28-2-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "hertha-karlsruher-2026-11-28-2-bundesliga",
+  "d": "2026-11-28",
   "c": [
    "DAZN"
   ]
  },
  {
-  "s": "lask-slovan-bratislava-2026-11-03-liga-dos-campeoes",
-  "d": "2026-11-03",
+  "s": "dresden-st-pauli-2026-11-28-2-bundesliga",
+  "d": "2026-11-28",
   "c": [
    "DAZN"
   ]
  },
  {
-  "s": "sporting-valadares-gaia-2026-11-03-camp-nac-fem",
-  "d": "2026-11-03",
+  "s": "osnabruck-hannover-2026-11-28-2-bundesliga",
+  "d": "2026-11-28",
   "c": [
-   "Sporting TV"
+   "DAZN"
+  ]
+ },
+ {
+  "s": "real-betis-rayo-vallecano-2026-11-28-laliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "frosinone-parma-2026-11-28-serie-a",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "hamburgo-sv-bayern-munchen-2026-11-28-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "mainz-union-berlin-2026-11-28-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "paderborn-schalke-2026-11-28-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "koln-elversberg-2026-11-28-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "manchester-united-brentford-2026-11-28-premier-league",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "leeds-united-coventry-city-2026-11-28-premier-league",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 4"
+  ]
+ },
+ {
+  "s": "malaga-athletic-club-2026-11-28-laliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "angers-lens-2026-11-28-liga-francesa",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "torino-lazio-2026-11-28-serie-a",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 2"
+  ]
+ },
+ {
+  "s": "ipswich-town-aston-villa-2026-11-28-premier-league",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "elche-atl-madrid-2026-11-28-laliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "stuttgart-eintracht-frankfurt-2026-11-28-bundesliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "le-havre-estrasburgo-2026-11-28-liga-francesa",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 5"
+  ]
+ },
+ {
+  "s": "psg-lorient-2026-11-28-liga-francesa",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 4"
+  ]
+ },
+ {
+  "s": "inter-de-milao-genova-2026-11-28-serie-a",
+  "d": "2026-11-28",
+  "c": [
+   "Sport TV 7"
+  ]
+ },
+ {
+  "s": "real-madrid-alaves-2026-11-28-laliga",
+  "d": "2026-11-28",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "penafiel-benfica-b-2026-11-29-liga-portugal-2",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "udinese-fiorentina-2026-11-29-serie-a",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 2"
+  ]
+ },
+ {
+  "s": "everton-liverpool-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "swansea-city-cardiff-city-2026-11-29-efl-championship",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "eintracht-braunschweig-wolfsburg-2026-11-29-2-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 4"
+  ]
+ },
+ {
+  "s": "furth-arminia-2026-11-29-2-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "magdeburg-energie-cottbus-2026-11-29-2-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "valencia-osasuna-2026-11-29-laliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "sassuolo-napoles-2026-11-29-serie-a",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 2"
+  ]
+ },
+ {
+  "s": "auxerre-marselha-2026-11-29-liga-francesa",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "felgueiras-porto-b-2026-11-29-liga-portugal-2",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV+"
+  ]
+ },
+ {
+  "s": "sunderland-tottenham-hotspur-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "brighton-hove-albion-newcastle-united-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "crystal-palace-hull-city-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "fulham-bournemouth-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "freiburg-leipzig-2026-11-29-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN"
+  ]
+ },
+ {
+  "s": "deportivo-de-la-coruna-barcelona-2026-11-29-laliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "arsenal-manchester-city-2026-11-29-premier-league",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 1"
+  ]
+ },
+ {
+  "s": "hoffenheim-augsburg-2026-11-29-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "roma-monza-2026-11-29-serie-a",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "celta-de-vigo-villarreal-2026-11-29-laliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "gil-vicente-estoril-praia-2026-11-29-primeira-liga",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 2"
+  ]
+ },
+ {
+  "s": "borussia-dortmund-bayer-leverkusen-2026-11-29-bundesliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 3"
+  ]
+ },
+ {
+  "s": "como-juventus-2026-11-29-serie-a",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 3"
+  ]
+ },
+ {
+  "s": "lyon-monaco-2026-11-29-liga-francesa",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 4"
+  ]
+ },
+ {
+  "s": "real-sociedad-sevilla-2026-11-29-laliga",
+  "d": "2026-11-29",
+  "c": [
+   "DAZN 2"
+  ]
+ },
+ {
+  "s": "porto-sporting-2026-11-29-primeira-liga",
+  "d": "2026-11-29",
+  "c": [
+   "Sport TV 1"
+  ]
+ },
+ {
+  "s": "casa-pia-braga-2026-11-30-primeira-liga",
+  "d": "2026-11-30",
+  "c": [
+   "Sport TV 1"
   ]
  }
 ]

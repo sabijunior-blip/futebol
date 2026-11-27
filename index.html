@@ -534,12 +534,12 @@ function slimS(d){
   return {k:(d.keyEvents||[]).map(k=>({t:k.type?.text,m:k.clock?.displayValue,v:k.clock?.value,tm:k.team?.id,p:(k.participants||[]).map(p=>p.athlete?.displayName).filter(Boolean),x:k.shortText||k.text})),
     s:(d.boxscore?.teams||[]).map(t=>({id:t.team?.id,s:Object.fromEntries((t.statistics||[]).map(z=>[z.name,z.displayValue]))})),
     r:(d.rosters||[]).map(r=>({ha:r.homeAway,tm:{id:r.team?.id,displayName:r.team?.displayName,color:r.team?.color},f:r.formation,
-      r:(r.roster||[]).map(p=>({st:p.starter,j:p.jersey,fp:p.formationPlace,pos:p.position?.abbreviation,n:p.athlete?.displayName,sn:p.athlete?.shortName}))}))};
+      r:(r.roster||[]).map(p=>({st:p.starter,j:p.jersey,fp:p.formationPlace,pos:p.position?.abbreviation,posn:p.position?.displayName||p.position?.name,n:p.athlete?.displayName,sn:p.athlete?.shortName}))}))};
 }
 function fromDb(o){
   return {keyEvents:(o.k||[]).map(k=>({type:{text:k.t},clock:{displayValue:k.m,value:k.v},team:{id:k.tm},participants:(k.p||[]).map(n=>({athlete:{displayName:n}})),shortText:k.x})),
     boxscore:{teams:(o.s||[]).map(t=>({team:{id:t.id},statistics:Object.entries(t.s||{}).map(([name,displayValue])=>({name,displayValue}))}))},
-    rosters:(o.r||[]).map(r=>({homeAway:r.ha,team:r.tm,formation:r.f,roster:(r.r||[]).map(p=>({starter:p.st,jersey:p.j,formationPlace:p.fp,position:{abbreviation:p.pos},athlete:{displayName:p.n,shortName:p.sn}}))}))};
+    rosters:(o.r||[]).map(r=>({homeAway:r.ha,team:r.tm,formation:r.f,roster:(r.r||[]).map(p=>({starter:p.st,jersey:p.j,formationPlace:p.fp,position:{abbreviation:p.pos,displayName:p.posn},athlete:{displayName:p.n,shortName:p.sn}}))}))};
 }
 const sKey=id=>'fut_s'+id;
 function sSave(id,o){
@@ -559,13 +559,16 @@ async function getSum(x,fresh){
 function chan(){return `<div class="box"><h4>Onde ver em Portugal</h4><div id="chn"><div class="st">A procurar…</div></div></div>`}
 const nz=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 async function canaisJson(){if(CACHE.cj)return CACHE.cj;try{CACHE.cj=await j('canais.json?t='+Date.now())}catch{CACHE.cj=[]}return CACHE.cj}
-const tk=n=>nz(n).split(/[^a-z0-9]+/).filter(t=>t.length>2);
+const ALI={strasbourg:['estrasburgo'],marseille:['marselha'],napoli:['napoles'],genoa:['genova'],munich:['munchen','munique'],cologne:['koln'],milan:['milao'],hamburg:['hamburgo'],seville:['sevilla'],gladbach:['monchengladbach'],bruges:['brugge'],prague:['praha'],copenhagen:['copenhaga'],spurs:['tottenham'],wolves:['wolverhampton'],forest:['nottingham']};
+const tk=n=>{const t=nz(n).split(/[^a-z0-9]+/).filter(x=>x.length>2);return [...t,...t.flatMap(x=>ALI[x]||[])]};
+const cpl=(a,b)=>{let i=0;while(i<a.length&&i<b.length&&a[i]===b[i])i++;return i};
+const near=(a,b)=>a===b||(Math.min(a.length,b.length)>=5&&cpl(a,b)>=4);
 async function chanFor(x){
   const [h,w]=cp(x),d0=new Date(x.e.date),ds=`${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
   const ta=tk(h.team.displayName),tb=tk(w.team.displayName);let best=null,bs=0;
   for(const e of await canaisJson()){
-    if(e.d!==ds||/youth|fem|next-gen|u19|u23|futsal|sub-/.test(e.s||''))continue;
-    const st=new Set((e.s||'').split('-')),a=ta.filter(t=>st.has(t)).length,b=tb.filter(t=>st.has(t)).length;
+    if(e.d!==ds||/youth|fem|next-gen|u19|u23|futsal|sub-|iniciados|juniores|juvenis|camp-nac/.test(e.s||''))continue;
+    const st=[...new Set((e.s||'').split('-'))],a=ta.filter(t=>st.some(z=>near(t,z))).length,b=tb.filter(t=>st.some(z=>near(t,z))).length;
     if(a&&b&&a+b>bs){bs=a+b;best=e}}
   return best?best.c:[];
 }
@@ -632,30 +635,48 @@ async function tline(x,fresh){
 const depthOf=a=>{a=String(a||'').toUpperCase();
   if(!a)return null;
   if(/^G/.test(a))return 0;
-  if(/^(CD|CB|SW|LCB|RCB|D)/.test(a)||/^(LB|RB|LWB|RWB|WB)$/.test(a))return 1;
+  if(/^(LWB|RWB|WB)$/.test(a))return 2;
+  if(/^(CD|CB|SW|LCB|RCB|LB|RB)/.test(a)||a==='D')return 1;
   if(/^DM|^CDM/.test(a))return 2;
   if(/^AM|^CAM|^LAM|^RAM/.test(a))return 4;
   if(/^(LW|RW|LF|RF|W)$/.test(a)||/^(F|CF|ST|SS|LS|RS|FW)/.test(a))return 5;
   if(/^(CM|M|LM|RM|LCM|RCM)/.test(a))return 3;
   return null};
-const sideKey=a=>{a=String(a||'').toUpperCase();return /^L[A-Z]{0,2}$|-L$/.test(a)?0:/^R[A-Z]{0,2}$|-R$/.test(a)?2:1};
+const sideOf=p=>{const a=String(p.position?.abbreviation||'').toUpperCase(),n=String(p.position?.displayName||p.position?.name||'');
+  if(/^L[A-Z]{0,2}$|-L$/.test(a)||/left/i.test(n))return 0;
+  if(/^R[A-Z]{0,2}$|-R$/.test(a)||/right/i.test(n))return 2;
+  return 1};
 const lastName=p=>{const full=String(p.athlete?.displayName||p.athlete?.shortName||'').trim().split(/\s+/);let n=full.pop()||'';if(/^(jr\.?|junior|filho|sr\.?)$/i.test(n)&&full.length)n=full.pop();return n.length>10?n.slice(0,9)+'…':n};
+function layoutTeam(r){
+  const st=(r.roster||[]).filter(p=>p.starter).sort((a,b)=>(a.formationPlace||99)-(b.formationPlace||99));
+  if(!st.length)return [];
+  const isGK=p=>/^G/i.test(p.position?.abbreviation||'')||/goalkeeper/i.test(p.position?.displayName||p.position?.name||'');
+  const gk=st.find(isGK)||st[0],rest=st.filter(p=>p!==gk);
+  const fm=(r.formation||'').split('-').map(Number).filter(Boolean);
+  const dp=rest.map(p=>depthOf(p.position?.abbreviation));
+  let sorted=rest;
+  if(rest.length&&dp.every(d=>d!==null))sorted=rest.map((p,i)=>({p,d:dp[i]})).sort((a,b)=>a.d-b.d||(a.p.formationPlace||99)-(b.p.formationPlace||99)).map(o=>o.p);
+  let rows;
+  if(fm.length&&fm.reduce((a,b)=>a+b,0)===rest.length){rows=[[gk]];let i=0;fm.forEach(n=>{rows.push(sorted.slice(i,i+n));i+=n})}
+  else rows=[[gk],sorted.slice(0,4),sorted.slice(4,8),sorted.slice(8)];
+  rows=rows.filter(rw=>rw.length);
+  // direção do número de lugar (esquerda→direita ou o contrário) deduzida dos jogadores com lado conhecido
+  let asc=0,desc=0;
+  rows.forEach(rw=>{const sd=rw.filter(p=>sideOf(p)!==1);for(let i=0;i<sd.length;i++)for(let j=i+1;j<sd.length;j++){const a=sd[i],b=sd[j];if(sideOf(a)===sideOf(b)||a.formationPlace==null||b.formationPlace==null)continue;((sideOf(a)<sideOf(b))===(a.formationPlace<b.formationPlace))?asc++:desc++}});
+  const dir=desc>asc?-1:1;
+  return rows.map(rw=>rw.slice().sort((a,b)=>sideOf(a)-sideOf(b)||dir*((a.formationPlace||0)-(b.formationPlace||0))));
+}
 function pitch(rs){
-  const W=100,H=180;
+  const W=100,H=180,flip=!!S.flip;
   let g=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><rect width="${W}" height="${H}" fill="#1c6b45"/>${[...Array(9)].map((_,i)=>`<rect y="${i*20}" width="${W}" height="10" fill="#fff" opacity=".06"/>`).join('')}<g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width=".5"><rect x="3" y="3" width="94" height="174"/><line x1="3" y1="90" x2="97" y2="90"/><circle cx="50" cy="90" r="10"/><rect x="25" y="3" width="50" height="22"/><rect x="25" y="155" width="50" height="22"/><rect x="38" y="3" width="24" height="8"/><rect x="38" y="169" width="24" height="8"/></g><circle cx="50" cy="90" r=".9" fill="#fff"/>`;
   rs.forEach(r=>{
     const home=r.homeAway==='home',hx=(r.team?.color||'0f6b4a').replace('#','').padEnd(6,'0'),col='#'+hx;
     const lum=(parseInt(hx.slice(0,2),16)*299+parseInt(hx.slice(2,4),16)*587+parseInt(hx.slice(4,6),16)*114)/1000,tc=lum>170?'#111':'#fff';
-    const st=(r.roster||[]).filter(p=>p.starter).sort((a,b)=>(a.formationPlace||99)-(b.formationPlace||99));
-    const fm=(r.formation||'').split('-').map(Number).filter(Boolean);let rows=[];
-    const dp=st.map(p=>depthOf(p.position?.abbreviation));
-    if(st.length===11&&dp.every(d=>d!==null)&&dp.filter(d=>d===0).length===1){const lv=[...new Set(dp)].sort((a,b)=>a-b);rows=lv.map(l=>st.filter((p,i)=>dp[i]===l))}
-    else if(fm.length&&fm.reduce((a,b)=>a+b,0)===st.length-1){rows=[[st[0]]];let i=1;fm.forEach(n=>{rows.push(st.slice(i,i+n));i+=n})}else rows=[st.slice(0,1),st.slice(1,5),st.slice(5,9),st.slice(9)];
+    const rows=layoutTeam(r);
     rows.forEach((rw,idx)=>{
-      rw=rw.filter(Boolean).sort((a,b)=>sideKey(a.position?.abbreviation)-sideKey(b.position?.abbreviation)||(a.formationPlace||0)-(b.formationPlace||0));
       const nl=rows.length-1,yh=idx===0?167:(nl>1?143-(idx-1)*(39/(nl-1)):125),y=home?yh:H-yh;
-      const sided=rw.some(p=>sideKey(p.position?.abbreviation)!==1),n=rw.length,w=n<2?0:(sided?76:Math.min(76,26*(n-1)));
-      rw.forEach((p,i)=>{let x=n<2?50:50-w/2+i*(w/(n-1));if(!home)x=100-x;
+      const sided=rw.some(p=>sideOf(p)!==1),n=rw.length,w=n<2?0:(sided?76:Math.min(76,26*(n-1)));
+      rw.forEach((p,i)=>{let x=n<2?50:50-w/2+i*(w/(n-1));if(!home)x=100-x;if(flip)x=100-x;
         g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.8" fill="${col}" stroke="#fff" stroke-width=".6"/><text x="${x.toFixed(1)}" y="${(y+1.3).toFixed(1)}" text-anchor="middle" font-size="3.5" font-weight="700" fill="${tc}">${esc(p.jersey||'')}</text><text x="${x.toFixed(1)}" y="${(y+8.2).toFixed(1)}" text-anchor="middle" font-size="2.8" font-weight="600" fill="#fff" stroke="#000" stroke-width=".55" paint-order="stroke">${esc(lastName(p))}</text>`})})});
   return g+'</svg>';
 }
@@ -671,7 +692,7 @@ async function lineups(){
   try{const d=await getSum(x),rs=(d.rosters||[]).filter(r=>(r.roster||[]).length);
     if(!rs.length){el.innerHTML='<p class="msg">As constituições ainda não foram divulgadas.</p>';return}
     const A=rs.find(r=>r.homeAway==='away'),H=rs.find(r=>r.homeAway==='home'),sub=r=>(r.roster||[]).filter(p=>!p.starter).map(p=>esc(p.athlete?.shortName||p.athlete?.displayName)).join(', ');
-    el.innerHTML=`<div class="box"><div style="font-weight:700;margin-bottom:6px">${esc(A?.team?.displayName||'')} · ${esc(A?.formation||'')}</div><div class="pitch">${pitch(rs)}</div><div class="st" style="margin-top:6px">Posições recebidas: ${rs.map(r=>(r.roster||[]).filter(p=>p.starter).map(p=>p.position?.abbreviation||'?').join(' ')).join(' | ')}</div><div style="font-weight:700;margin-top:6px">${esc(H?.team?.displayName||'')} · ${esc(H?.formation||'')}</div>${rs.map(r=>sub(r)?`<div class="st" style="margin-top:8px"><b>${esc(r.team?.displayName||'')}</b> · suplentes: ${sub(r)}</div>`:'').join('')}</div>`;
+    el.innerHTML=`<div class="box"><div style="font-weight:700;margin-bottom:6px">${esc(A?.team?.displayName||'')} · ${esc(A?.formation||'')}</div><div class="pitch">${pitch(rs)}</div><div style="font-weight:700;margin-top:6px">${esc(H?.team?.displayName||'')} · ${esc(H?.formation||'')}</div><button class="seg" data-flip="1" style="width:100%;margin-top:8px">↔ Inverter esquerda e direita</button><div class="st" style="margin-top:6px">Dados da fonte: ${rs.map(r=>esc(r.team?.displayName||'')+' '+esc(r.formation||'?')+' → '+(r.roster||[]).filter(p=>p.starter).sort((a,b)=>(a.formationPlace||99)-(b.formationPlace||99)).map(p=>(p.formationPlace??'?')+':'+(p.position?.abbreviation||'?')).join(' ')).join(' | ')}</div>${rs.map(r=>sub(r)?`<div class="st" style="margin-top:8px"><b>${esc(r.team?.displayName||'')}</b> · suplentes: ${sub(r)}</div>`:'').join('')}</div>`;
   }catch{el.innerHTML='<p class="msg">Não foi possível carregar as constituições.</p>'}
 }
 // Canais aceites por competição (edita aqui). Só aparecem vídeos destes canais.
@@ -816,6 +837,7 @@ document.addEventListener('click',async e=>{
   if(b=t.closest('[data-id]')){openD(b.dataset.id);return}
   if(b=t.closest('[data-mt]')){mtab(b.dataset.mt);return}
   if(t.closest('#tb')){showTab();return}
+  if(t.closest('[data-flip]')){S.flip=!S.flip;save();lineups();return}
   if(t.closest('#lu')){lineups();return}
   if(b=t.closest('[data-vid]')){playVid(b.dataset.vid);return}
   if(b=t.closest('[data-ct]')){document.querySelectorAll('.cpn').forEach(x=>x.style.display=x.dataset.p===b.dataset.ct?'block':'none');document.querySelectorAll('.tabs .seg').forEach(s=>s.classList.toggle('on',s===b));return}

@@ -7,8 +7,8 @@ BASE = "https://www.apitotv.pt"
 PAGES = ["/", "/amanha", "/fim-de-semana"] + [
     "/competicao/" + c for c in [
         "liga-portugal", "taca-de-portugal", "liga-dos-campeoes", "liga-europa", "liga-conferencia",
-        "serie-a", "premier-league", "laliga", "bundesliga", "liga-francesa"]]
-UA = "Mozilla/5.0 (compatible; FutebolPessoal/1.0; uso pessoal)"
+        "serie-a", "premier-league", "laliga", "bundesliga", "liga-francesa", "liga-portugal-2", "efl-championship"]]
+UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
 def norm(t):
     t = re.sub(r"\s+", " ", t).strip()
@@ -17,10 +17,14 @@ def norm(t):
         return "Sport TV" + ((" " + m.group(1)) if m.group(1) and m.group(1) != "+" else ("+" if m.group(1) == "+" else ""))
     if t.lower() == "sportingtv":
         return "Sporting TV"
+    if t.lower().replace(" ", "") == "abolatv":
+        return "A Bola TV"
+    if t.lower().replace(" ", "") == "portocanal":
+        return "Porto Canal"
     return t
 
 def get(path):
-    req = urllib.request.Request(BASE + path, headers={"User-Agent": UA, "Accept-Language": "pt-PT"})
+    req = urllib.request.Request(BASE + path, headers={"User-Agent": UA, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8", "Accept-Language": "pt-PT,pt;q=0.9", "Referer": BASE + "/"})
     with urllib.request.urlopen(req, timeout=30) as r:
         return r.read().decode("utf-8", "replace")
 
@@ -42,7 +46,7 @@ def parse(h):
             if a:
                 chans.append(norm(a.group(1)))
         text = re.sub(r"<[^>]+>", " ", chunk)
-        for t in re.findall(r"SPTV\s?\+?\d?|SportingTV", text):
+        for t in re.findall(r"SPTV\s?\+?\d?|SportingTV|A ?BolaTV|PortoCanal", text):
             chans.append(norm(t))
         chans = list(dict.fromkeys(c for c in chans if c))
         if chans:
@@ -66,4 +70,5 @@ def main():
     json.dump(res, open("canais.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
     print("escritos", len(res))
 
-main()
+if __name__ == "__main__":
+    main()
